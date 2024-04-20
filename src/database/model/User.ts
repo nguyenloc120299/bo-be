@@ -4,29 +4,70 @@ import Role from "./Role";
 export const DOCUMENT_NAME = "User";
 export const COLLECTION_NAME = "users";
 
-export default interface User {
-  _id: Types.ObjectId;
-  name?: string;
-  profilePicUrl?: string;
-  email?: string;
-  password?: string;
-  roles: Role[];
-  verified?: boolean;
-  status?: boolean;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
-const schema = new Schema<User>(
+const schema = new Schema(
   {
-    name: {
+    current_point_type: {
+      type: Schema.Types.String,
+      default: "demo",
+    },
+    user_name: {
       type: Schema.Types.String,
       trim: true,
+      require: true,
       maxlength: 200,
     },
     profilePicUrl: {
       type: Schema.Types.String,
       trim: true,
+    },
+    real_balance: {
+      type: Schema.Types.Number,
+      default: 0,
+    },
+    demo_balance: {
+      type: Schema.Types.Number,
+      default: 1000,
+    },
+    first_name: {
+      type: Schema.Types.String,
+    },
+    last_name: {
+      type: Schema.Types.String,
+    },
+    identity_number: {
+      type: Schema.Types.Number,
+    },
+    before_identity_card: {
+      type: Schema.Types.Number,
+    },
+    after_identity_card: {
+      type: Schema.Types.Number,
+    },
+    enable_sound: {
+      type: Schema.Types.Boolean,
+    },
+    is_show_balance: {
+      type: Schema.Types.Boolean,
+    },
+    user_mode: {
+      type: Schema.Types.String,
+      required: true,
+    },
+    phone: {
+      type: Schema.Types.String,
+    },
+    is_lock_transfer: {
+      type: Schema.Types.Boolean,
+    },
+    two_fa: {
+      type: Schema.Types.String,
+    },
+    is_two_fa: {
+      type: Schema.Types.Boolean,
+    },
+    status: {
+      type: Schema.Types.Boolean,
+      default: true,
     },
     email: {
       type: Schema.Types.String,
@@ -37,7 +78,6 @@ const schema = new Schema<User>(
     },
     password: {
       type: Schema.Types.String,
-      select: false,
     },
     roles: {
       type: [
@@ -53,23 +93,14 @@ const schema = new Schema<User>(
       type: Schema.Types.Boolean,
       default: false,
     },
-    status: {
-      type: Schema.Types.Boolean,
-      default: true,
-    },
-    createdAt: {
+
+    last_login: {
       type: Schema.Types.Date,
-      required: true,
-      select: false,
-    },
-    updatedAt: {
-      type: Schema.Types.Date,
-      required: true,
-      select: false,
     },
   },
   {
     versionKey: false,
+    timestamps: true,
   }
 );
 
@@ -77,4 +108,4 @@ schema.index({ _id: 1, status: 1 });
 schema.index({ email: 1 });
 schema.index({ status: 1 });
 
-export const UserModel = model<User>(DOCUMENT_NAME, schema, COLLECTION_NAME);
+export const UserModel = model(DOCUMENT_NAME, schema, COLLECTION_NAME);

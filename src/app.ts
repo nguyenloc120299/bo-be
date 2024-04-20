@@ -5,8 +5,10 @@ import express, { Request, Response, NextFunction } from "express";
 import { Bet } from "./socket/bet";
 import cors from "cors";
 import "./database"; // initialize database
+import "./redis";
 import routes from "./routes";
 import { Server } from "http";
+
 import { Socket } from "socket.io";
 import { SocketServer } from "./socket/socket-server";
 
