@@ -5,6 +5,7 @@ import path from "path";
 import { Server } from "socket.io";
 import { getSum, getValueFromPercent, randomInArray } from "../../helpers/bet";
 import { getTradeValueCurrent } from "../binance";
+import { getValue, setValue } from "../../redis";
 
 interface BetData {
   lowPrice: number;
@@ -91,6 +92,23 @@ class Bet {
     if (!this.isBet && this.second === 1) {
       this.resetBetCondition();
     }
+    if (this.isBet && this.second === 1) {
+      getValue("bet_count").then((bet_count) => {
+        this.bet_count = bet_count as any;
+      });
+      getValue("condition_up").then((condition_up) => {
+        this.condition_up = condition_up as any;
+      });
+      getValue("condition_down").then((condition_down) => {
+        this.condition_down = condition_down as any;
+      });
+    }
+    if (!this.isBet && this.second <= 15) {
+      getValue("override_result").then((override_result) => {
+        this.override_result = override_result;
+      });
+    }
+
     if (this.override_result === "up" || this.override_result === "down") {
       if (this.second % 3) {
         this.currentClosePrice = getSum(
@@ -211,8 +229,11 @@ class Bet {
   }
 
   private resetBetCondition(): void {
-    // Your existing logic here
-    // ...
+    setValue("override_result", "");
+    setValue("bet_guess", "");
+    setValue("bet_count", "0");
+    setValue("condition_up", "0");
+    setValue("condition_down", "0");
     this.override_result = null;
     this.bet_count = 0;
     this.condition_up = 0;
@@ -228,11 +249,15 @@ class Bet {
       if (this.second === 1) {
         writeData(data);
       }
+
       if (!this.isBet && this.second === 1) {
-        console.log("====================================");
-        console.log(11111);
-        console.log("====================================");
+        setValue("bet_id", this.createDateTime.toString());
       }
+      if (!this.isBet && this.second === 1) {
+        getValue("bet_id").then((res) => console.log(res));
+      }
+
+      setValue("is_bet", this.isBet as any);
       this.io.to("MEMBER").emit("WE_PRICE", data);
 
       let isAllowUpdate = randomInArray(["allow", "not", "not", "not"]);
