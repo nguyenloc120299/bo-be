@@ -255,7 +255,6 @@ class Bet {
       if (this.isBet && this.second === MAX_SECOND_BET) {
         setValue("bet_id", this.createDateTime.toString());
       }
-      console.log(this.isBet, this.second);
 
       if (!this.isBet && this.second === 1) {
         getValue("bet_id").then((bet_id: any) => {
