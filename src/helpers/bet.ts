@@ -1,3 +1,5 @@
+import axios from "axios";
+
 export const getProp = (
   object: any,
   keys: string | string[],
@@ -47,4 +49,18 @@ export function getSum(
   };
 
   return operators[condition](value1, value2);
+}
+
+export async function getTradeRate() {
+  const response = await axios.get(
+    "https://api.coingecko.com/api/v3/simple/price",
+    {
+      params: {
+        ids: "bitcoin",
+        vs_currencies: "usd",
+      },
+    }
+  );
+
+  return response.data.bitcoin.usd;
 }
