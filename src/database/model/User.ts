@@ -74,7 +74,7 @@ const schema = new Schema(
       unique: true,
       sparse: true, // allows null
       trim: true,
-      select: false,
+
     },
     password: {
       type: Schema.Types.String,

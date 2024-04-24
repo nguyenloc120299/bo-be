@@ -155,6 +155,36 @@ const betController = {
       console.log("check result", error);
     }
   },
+
+  getTransaction: asyncHandler(async (req: ProtectedRequest, res) => {
+    const page = (req.query.page || 1) as any;
+    const limit = (req.query.limit || 20) as any;
+    const transations = await UserTransactionModel.find({
+      user: req.user?._id,
+      transaction_type: TRANSACTION_TYPE_BET,
+      point_type: req?.user?.current_point_type,
+      transaction_status: req.query?.transaction_status,
+    })
+      .sort({
+        createdAt: -1,
+      })
+      .skip(page - 1)
+      .limit(limit)
+      .exec();
+    let total_bet_open = 0;
+    if (req.query.transaction_status == TRANSACTION_STATUS_PENDING) {
+      total_bet_open = await UserTransactionModel.countDocuments({
+        user: req.user?._id,
+        transaction_type: TRANSACTION_TYPE_BET,
+        point_type: req?.user?.current_point_type,
+        transaction_status: req.query?.transaction_status,
+      });
+    }
+    return new SuccessResponse("ok", {
+      total_bet_open,
+      transations,
+    }).send(res);
+  }),
 };
 
 export { betController };

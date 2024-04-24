@@ -10,4 +10,6 @@ tradingRouter.use(authentication);
 
 tradingRouter.post("/bet", betController.postBet);
 
+tradingRouter.get("/transactions", betController.getTransaction);
+
 export default tradingRouter;
