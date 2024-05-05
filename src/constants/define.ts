@@ -107,3 +107,5 @@ export const CHALLENGE_TYPE_AGENCY = "agency";
 
 export const CHALLENGE_SCHEDULE_MONTH = "month";
 export const CHALLENGE_SCHEDULE_WEEK = "week";
+export const PAYMENT_METHOD_BANK = "1";
+export const PAYMENT_METHOD_MOMO = "6";

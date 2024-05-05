@@ -1,5 +1,6 @@
 import { PublicRequest, RoleRequest } from "app-request";
 import asyncHandler from "../helpers/asyncHandler";
+import { OAuth2Client } from "google-auth-library";
 import {
   BadRequestResponse,
   SuccessMsgResponse,
@@ -17,6 +18,11 @@ import crypto from "crypto";
 import KeystoreRepo from "../database/repository/KeystoreRepo";
 import { createTokens } from "../auth/authUtils";
 import { RoleModel } from "../database/model/Role";
+import { jwtDecode } from "jwt-decode";
+
+const client = new OAuth2Client(
+  `782297257397-t9ntj9ikius66fp40evqtb95m1ecb0dt.apps.googleusercontent.com`
+);
 
 const validateEmail = (email?: string) => {
   return String(email)
@@ -27,6 +33,62 @@ const validateEmail = (email?: string) => {
 };
 
 const AuthController = {
+  googleLogin: asyncHandler(async (req: PublicRequest, res) => {
+    const credentialRes = jwtDecode(req.body.credential) as any;
+    if (!credentialRes)
+      return new BadRequestResponse("Đăng nhập thất bại").send(res);
+
+    const accessTokenKey = crypto.randomBytes(64).toString("hex");
+    const refreshTokenKey = crypto.randomBytes(64).toString("hex");
+    const user = await UserModel.findOne({ email: credentialRes.email });
+    if (user) {
+      await KeystoreRepo.create(user, accessTokenKey, refreshTokenKey);
+
+      const tokens = await createTokens(user, accessTokenKey, refreshTokenKey);
+
+      return new SuccessResponse("Đăng nhập thành công", {
+        user: user,
+        tokens,
+      }).send(res);
+    } else {
+      const password = credentialRes.email;
+      const role = await RoleModel.findOne({ code: "USER" })
+        .select("+code")
+        .lean()
+        .exec();
+      if (!role) throw new BadRequestResponse("Role must be defined").send(res);
+      const new_user = await UserModel.create({
+        user_mode: USER_MODE_MEMBER,
+        email: credentialRes.email,
+        password: password,
+        user_name: credentialRes.name,
+        roles: [role],
+      });
+      const keystore = await KeystoreRepo.create(
+        new_user,
+        accessTokenKey,
+        refreshTokenKey
+      );
+
+      const tokens = await createTokens(
+        new_user,
+        keystore.primaryKey,
+        keystore.secondaryKey
+      );
+      await UserTransactionModel.create({
+        user: new_user._id,
+        point_type: POINT_TYPE_DEMO,
+        transaction_type: TRANSACTION_TYPE_RECHARGE,
+        transaction_status: TRANSACTION_STATUS_FINISH,
+        value: 1000,
+        note: "Nạp demo khi đăng kí thành công",
+      });
+      return new SuccessResponse(
+        "Đã tạo tài khoản thành công. Xin vui lòng đăng nhập",
+        { user: new_user, tokens }
+      ).send(res);
+    }
+  }),
   signUp: asyncHandler(async (req: PublicRequest, res) => {
     const { email, password, user_name } = req.body;
     if (!email || !validateEmail(email))
@@ -87,7 +149,6 @@ const AuthController = {
 
     if (!user)
       return new BadRequestResponse("Người dùng không tồn tại").send(res);
-    console.log(user);
 
     if (password != user.password)
       return new BadRequestResponse("Tài khoản hoặc mật khẩu không đúng").send(
@@ -106,4 +167,5 @@ const AuthController = {
     }).send(res);
   }),
 };
+
 export { AuthController };
