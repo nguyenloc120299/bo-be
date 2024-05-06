@@ -107,5 +107,13 @@ export const CHALLENGE_TYPE_AGENCY = "agency";
 
 export const CHALLENGE_SCHEDULE_MONTH = "month";
 export const CHALLENGE_SCHEDULE_WEEK = "week";
+
 export const PAYMENT_METHOD_BANK = "1";
-export const PAYMENT_METHOD_MOMO = "6";
+export const PAYMENT_METHOD_MOMO = "2";
+export const PAYMENT_METHOD_ZALOPAY = "3";
+export const PAYMENT_METHOD_BEP20 = "0";
+
+export const MERCHANT_KEY = "9ed9988588554658a2afad3b0c47424f";
+export const MERCHANT_ID = "220456";
+
+export const MINUTES_15 = 1000 * 60 * 15;

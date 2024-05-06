@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const member_1 = __importDefault(require("./access/member"));
 const auth_1 = __importDefault(require("./auth"));
+// import { Permission } from "../database/model/ApiKey";
 const profile_1 = __importDefault(require("./profile"));
 const trading_1 = __importDefault(require("./trading"));
 const router = express_1.default.Router();
