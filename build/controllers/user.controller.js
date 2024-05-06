@@ -18,7 +18,7 @@ const UserController = {
         console.log("====================================");
         console.log(sign, result, amount, tradeNo, outTradeNo);
         console.log("====================================");
-        return new ApiResponse_1.SuccessResponse("Test success", true).send(res);
+        return res.json(`success`);
     }),
     postRecharge: (0, asyncHandler_1.default)(async (req, res) => {
         const { amount, payment_method, rateUsd } = req.body;

@@ -16,8 +16,7 @@ const socket_server_1 = require("./socket/socket-server");
 const bet_2 = require("./helpers/bet");
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
-app.use(express_1.default.json({ limit: "10mb" }));
-app.use(express_1.default.urlencoded({ limit: "10mb", extended: false, parameterLimit: 50000 }));
+app.use(express_1.default.urlencoded({ limit: "10mb", extended: true, parameterLimit: 50000 }));
 app.use((0, cors_1.default)({ origin: "*", optionsSuccessStatus: 200 }));
 // Routes
 app.use("/api", routes_1.default);

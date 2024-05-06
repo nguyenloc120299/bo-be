@@ -12,6 +12,7 @@ import {
   MERCHANT_ID,
   MERCHANT_KEY,
   POINT_TYPE_REAL,
+  TRANSACTION_STATUS_FINISH,
   TRANSACTION_STATUS_PENDING,
   TRANSACTION_TYPE_RECHARGE,
 } from "../constants/define";
@@ -24,7 +25,18 @@ const UserController = {
     console.log("====================================");
     console.log(sign, result, amount, tradeNo, outTradeNo);
     console.log("====================================");
-    return new SuccessResponse("Test success", true).send(res);
+
+    const transation = await UserTransactionModel.findById(outTradeNo);
+    if (transation) {
+      const user = await UserModel.findById(transation.user);
+      if (!user) return res.json("success");
+      user.real_balance = user.real_balance + transation.value;
+      transation.transaction_status = TRANSACTION_STATUS_FINISH;
+
+      await user.save();
+      await transation.save();
+    }
+    return res.json("success");
   }),
 
   postRecharge: asyncHandler(async (req: ProtectedRequest, res) => {
