@@ -5,7 +5,7 @@ import permission from "../helpers/permission";
 import member from "./access/member";
 import authRouter from "./auth";
 import porfileRouter from "./profile";
-import { Permission } from "../database/model/ApiKey";
+// import { Permission } from "../database/model/ApiKey";
 import profileRouter from "./profile";
 import trading from "./trading";
 const router = express.Router();
