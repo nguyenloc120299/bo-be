@@ -39,7 +39,7 @@ const UserController = {
       await user.save();
       await transation.save();
     }
-    return res.json("success");
+    return res.send('success');
   }),
 
   postRecharge: asyncHandler(async (req: ProtectedRequest, res) => {

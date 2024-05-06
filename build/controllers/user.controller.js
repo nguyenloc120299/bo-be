@@ -18,7 +18,10 @@ const UserController = {
         console.log("====================================");
         console.log(sign, result, amount, tradeNo, outTradeNo);
         console.log("====================================");
-        const transation = await UserTransation_1.UserTransactionModel.findById(outTradeNo);
+        const transation = await UserTransation_1.UserTransactionModel.findOne({
+            _id: outTradeNo,
+            transaction_status: define_1.TRANSACTION_STATUS_PENDING,
+        });
         if (transation) {
             const user = await User_1.UserModel.findById(transation.user);
             if (!user)
