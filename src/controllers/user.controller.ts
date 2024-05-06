@@ -32,7 +32,7 @@ const UserController = {
     });
     if (transation) {
       const user = await UserModel.findById(transation.user);
-      if (!user) return res.json("success");
+      if (!user) return res.send("success");
       user.real_balance = user.real_balance + transation.value;
       transation.transaction_status = TRANSACTION_STATUS_FINISH;
 
