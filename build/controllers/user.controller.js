@@ -25,13 +25,13 @@ const UserController = {
         if (transation) {
             const user = await User_1.UserModel.findById(transation.user);
             if (!user)
-                return res.json("success");
+                return res.send("success");
             user.real_balance = user.real_balance + transation.value;
             transation.transaction_status = define_1.TRANSACTION_STATUS_FINISH;
             await user.save();
             await transation.save();
         }
-        return res.json("success");
+        return res.send('success');
     }),
     postRecharge: (0, asyncHandler_1.default)(async (req, res) => {
         const { amount, payment_method, rateUsd } = req.body;
