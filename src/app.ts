@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+
 dotenv.config();
 
 import express, { Request, Response, NextFunction } from "express";
@@ -11,6 +12,7 @@ import { Server } from "http";
 
 import { Socket } from "socket.io";
 import { SocketServer } from "./socket/socket-server";
+import { getTradeRate } from "./helpers/bet";
 
 const app = express();
 
@@ -35,7 +37,9 @@ io.on("connection", (socket: Socket) => {
   SocketServer(socket);
 });
 
-const bet = new Bet(io, 6000);
-bet.start();
+getTradeRate().then((price) => {
+  const bet = new Bet(io, price);
+  bet.start();
+});
 
 export default httpServer;

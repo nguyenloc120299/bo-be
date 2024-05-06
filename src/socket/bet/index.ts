@@ -6,6 +6,8 @@ import { Server } from "socket.io";
 import { getSum, getValueFromPercent, randomInArray } from "../../helpers/bet";
 import { getTradeValueCurrent } from "../binance";
 import { getValue, setValue } from "../../redis";
+import { UserController } from "../../controllers/user.controller";
+import { betController } from "../../controllers/bet.controller";
 
 interface BetData {
   lowPrice: number;
@@ -94,13 +96,13 @@ class Bet {
     }
     if (this.isBet && this.second === 1) {
       getValue("bet_count").then((bet_count) => {
-        this.bet_count = bet_count as any;
+        if (bet_count) this.bet_count = +bet_count as any;
       });
       getValue("condition_up").then((condition_up) => {
-        this.condition_up = condition_up as any;
+        if (condition_up) this.condition_up = +condition_up as any;
       });
       getValue("condition_down").then((condition_down) => {
-        this.condition_down = condition_down as any;
+        if (condition_down) this.condition_down = +condition_down as any;
       });
     }
     if (!this.isBet && this.second <= 15) {
@@ -250,11 +252,30 @@ class Bet {
         writeData(data);
       }
 
-      if (!this.isBet && this.second === 1) {
+      if (this.isBet && this.second === MAX_SECOND_BET) {
         setValue("bet_id", this.createDateTime.toString());
       }
+
       if (!this.isBet && this.second === 1) {
-        getValue("bet_id").then((res) => console.log(res));
+        getValue("bet_id").then((bet_id: any) => {
+          if (bet_id) {
+            betController
+              .checkResult({
+                bet_id,
+                bet_condition_result:
+                  this.currentOpenPrice > this.currentClosePrice
+                    ? "down"
+                    : "up",
+                open_price: this.currentOpenPrice,
+                close_price: this.currentClosePrice,
+              })
+              .then((result: any) => {
+                if (!!result) {
+                  this.io.to("MEMBER").emit("WE_RESULT", { bet_id, result });
+                }
+              });
+          }
+        });
       }
 
       setValue("is_bet", this.isBet as any);

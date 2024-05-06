@@ -8,6 +8,7 @@ const profileRouter = express.Router();
 profileRouter.use(authentication);
 /*-------------------------------------------------------------------------*/
 
+profileRouter.post("/recharge", UserController.postRecharge);
 profileRouter.get("/me", UserController.getProfile);
 profileRouter.post("/logout", UserController.logOut);
 
