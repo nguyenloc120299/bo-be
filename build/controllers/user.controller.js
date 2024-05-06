@@ -18,7 +18,17 @@ const UserController = {
         console.log("====================================");
         console.log(sign, result, amount, tradeNo, outTradeNo);
         console.log("====================================");
-        return res.json(`success`);
+        const transation = await UserTransation_1.UserTransactionModel.findById(outTradeNo);
+        if (transation) {
+            const user = await User_1.UserModel.findById(transation.user);
+            if (!user)
+                return res.json("success");
+            user.real_balance = user.real_balance + transation.value;
+            transation.transaction_status = define_1.TRANSACTION_STATUS_FINISH;
+            await user.save();
+            await transation.save();
+        }
+        return res.json("success");
     }),
     postRecharge: (0, asyncHandler_1.default)(async (req, res) => {
         const { amount, payment_method, rateUsd } = req.body;
