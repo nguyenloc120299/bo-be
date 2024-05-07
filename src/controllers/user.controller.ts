@@ -11,10 +11,12 @@ import { UserTransactionModel } from "../database/model/UserTransation";
 import {
   MERCHANT_ID,
   MERCHANT_KEY,
+  PAYMENT_TYPE_BANK,
   POINT_TYPE_REAL,
   TRANSACTION_STATUS_FINISH,
   TRANSACTION_STATUS_PENDING,
   TRANSACTION_TYPE_RECHARGE,
+  TRANSACTION_TYPE_WITHDRAWAL,
 } from "../constants/define";
 import axios from "axios";
 import { UserModel } from "../database/model/User";
@@ -39,9 +41,30 @@ const UserController = {
       await user.save();
       await transation.save();
     }
-    return res.send('success');
+    return res.send("success");
   }),
-
+  postWithdrawal: asyncHandler(async (req: ProtectedRequest, res) => {
+    const { withdrawal_amount } = req.body;
+    const minimum_withdrawal = 5;
+    if (withdrawal_amount > req.user.real_balance)
+      return new BadRequestResponse(
+        "Số tiền yêu cầu rút lớn hơn số dư tài khoản Thực"
+      ).send(res);
+    if (withdrawal_amount < minimum_withdrawal)
+      return new BadRequestResponse(
+        `Số tiền rút phải lớn hơn ${minimum_withdrawal}`
+      ).send(res);
+    const transactionWithdraw = await UserTransactionModel.create({
+      user: req.user._id,
+      point_type: POINT_TYPE_REAL,
+      transaction_type: TRANSACTION_TYPE_WITHDRAWAL,
+      transaction_status: TRANSACTION_STATUS_PENDING,
+      value: -withdrawal_amount,
+      payment_type: PAYMENT_TYPE_BANK,
+    });
+    req.user.real_balance =req.user.real_balance -withdrawal_amount
+    return new SuccessMsgResponse("Đã gửi lệnh rút tiền thành công, vui lòng chờ duyệt").send(res)
+  }),
   postRecharge: asyncHandler(async (req: ProtectedRequest, res) => {
     const { amount, payment_method, rateUsd } = req.body;
     if (amount < 5)
@@ -113,6 +136,7 @@ const UserController = {
 
   updateProfile: asyncHandler(async (req: ProtectedRequest, res) => {
     const {
+      point_type,
       avatar,
       first_name,
       last_name,
@@ -122,6 +146,7 @@ const UserController = {
     } = req.body;
     const user = req.user;
     user.avatar = avatar || user.avatar;
+    user.current_point_type = point_type || user.point_type;
     user.first_name = first_name || user.first_name;
     user.last_name = last_name || user.last_name;
     user.current_point_type = current_point_type || user.current_point_type;

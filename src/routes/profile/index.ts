@@ -9,8 +9,13 @@ profileRouter.use(authentication);
 /*-------------------------------------------------------------------------*/
 
 profileRouter.post("/update", UserController.updateProfile);
+
 profileRouter.post("/recharge", UserController.postRecharge);
+
+profileRouter.post("/withdrawal", UserController.postWithdrawal);
+
 profileRouter.get("/me", UserController.getProfile);
+
 profileRouter.post("/logout", UserController.logOut);
 
 export default profileRouter;
