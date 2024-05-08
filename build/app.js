@@ -12,25 +12,18 @@ require("./database"); // initialize database
 require("./redis");
 const cron_1 = __importDefault(require("./cron"));
 const routes_1 = __importDefault(require("./routes"));
-const socket_server_1 = require("./socket/socket-server");
 const bet_2 = require("./helpers/bet");
+const socketInstance_1 = require("./socket/socketInstance");
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
 app.use(express_1.default.urlencoded({ limit: "10mb", extended: true, parameterLimit: 50000 }));
 app.use((0, cors_1.default)({ origin: "*", optionsSuccessStatus: 200 }));
 // Routes
 app.use("/api", routes_1.default);
-// Socket
 const httpServer = require("http").createServer(app);
-const io = require("socket.io")(httpServer, {
-    cors: {
-        origin: "*",
-    },
-});
-io.on("connection", (socket) => {
-    (0, socket_server_1.SocketServer)(socket);
-});
+(0, socketInstance_1.initializeSocket)(httpServer);
 (0, bet_2.getTradeRate)().then((price) => {
+    const io = (0, socketInstance_1.getSocketInstance)();
     const bet = new bet_1.Bet(io, price);
     bet.start();
 });

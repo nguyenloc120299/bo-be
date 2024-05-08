@@ -9,6 +9,7 @@ import porfileRouter from "./profile";
 
 import profileRouter from "./profile";
 import trading from "./trading";
+import admin from "./admin";
 const router = express.Router();
 
 /*---------------------------------------------------------*/
@@ -23,5 +24,5 @@ router.use("/member", member);
 router.use("/auth", authRouter);
 router.use("/profile", profileRouter);
 router.use("/trading", trading);
-
+router.use("/admin", admin);
 export default router;

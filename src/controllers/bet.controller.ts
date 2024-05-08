@@ -123,7 +123,6 @@ const betController = {
               let updateField = {};
 
               if (trans.point_type === POINT_TYPE_DEMO) {
-                console.log(trans.value + (trans.bet_value || 0));
                 updateField = {
                   demo_balance:
                     user.demo_balance + trans.value + (trans.bet_value || 0),
@@ -144,9 +143,10 @@ const betController = {
                 }
               );
             }
-            await trans.save();
+
             resultsCheck.push(trans);
           }
+          await trans.save();
         })
       );
 

@@ -3,7 +3,7 @@ import asyncHandler from "../helpers/asyncHandler";
 import { OAuth2Client } from "google-auth-library";
 import {
   BadRequestResponse,
-  SuccessMsgResponse,
+
   SuccessResponse,
 } from "../core/ApiResponse";
 import {

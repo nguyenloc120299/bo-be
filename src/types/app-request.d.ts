@@ -15,7 +15,12 @@ declare interface ProtectedRequest extends RoleRequest {
   user: any;
   accessToken: string;
   keystore: Keystore;
-  io:Socket
+  io: Socket;
+  query: {
+    page: string;
+    transaction_status:string
+    limit:string
+  };
 }
 
 declare interface Tokens {

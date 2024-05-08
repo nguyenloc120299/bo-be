@@ -12,12 +12,13 @@ const UserTransation_1 = require("../database/model/UserTransation");
 const define_1 = require("../constants/define");
 const axios_1 = __importDefault(require("axios"));
 const User_1 = require("../database/model/User");
+const socketInstance_1 = require("../socket/socketInstance");
+const redis_1 = require("../redis");
 const UserController = {
     callBackRecharge: (0, asyncHandler_1.default)(async (req, res) => {
-        const { sign, result, amount, tradeNo, outTradeNo } = req.body;
-        console.log("====================================");
-        console.log(sign, result, amount, tradeNo, outTradeNo);
-        console.log("====================================");
+        const { outTradeNo } = req.body;
+        const socket = (0, socketInstance_1.getSocketInstance)();
+        const usersSocket = await (0, redis_1.getValue)("users_socket");
         const transation = await UserTransation_1.UserTransactionModel.findOne({
             _id: outTradeNo,
             transaction_status: define_1.TRANSACTION_STATUS_PENDING,
@@ -25,13 +26,37 @@ const UserController = {
         if (transation) {
             const user = await User_1.UserModel.findById(transation.user);
             if (!user)
-                return res.send("success");
+                return res.send("fail");
             user.real_balance = user.real_balance + transation.value;
             transation.transaction_status = define_1.TRANSACTION_STATUS_FINISH;
             await user.save();
             await transation.save();
         }
-        return res.send('success');
+        socket.emit("recharge", true);
+        return res.send("success");
+    }),
+    postWithdrawal: (0, asyncHandler_1.default)(async (req, res) => {
+        const { amount } = req.body;
+        const withdrawal_amount = parseFloat(amount);
+        const minimum_withdrawal = 5;
+        if (withdrawal_amount > req.user.real_balance)
+            return new ApiResponse_1.BadRequestResponse("Số tiền yêu cầu rút lớn hơn số dư tài khoản Thực").send(res);
+        if (withdrawal_amount < minimum_withdrawal)
+            return new ApiResponse_1.BadRequestResponse(`Số tiền rút phải lớn hơn ${minimum_withdrawal}`).send(res);
+        const transactionWithdraw = await UserTransation_1.UserTransactionModel.create({
+            user: req.user._id,
+            point_type: define_1.POINT_TYPE_REAL,
+            transaction_type: define_1.TRANSACTION_TYPE_WITHDRAWAL,
+            transaction_status: define_1.TRANSACTION_STATUS_PENDING,
+            value: -withdrawal_amount,
+            payment_type: define_1.PAYMENT_TYPE_BANK,
+        });
+        req.user.real_balance = req.user.real_balance - withdrawal_amount;
+        await User_1.UserModel.findByIdAndUpdate(req.user._id, req.user, {
+            new: true,
+        });
+        await transactionWithdraw.save();
+        return new ApiResponse_1.SuccessMsgResponse("Đã gửi lệnh rút tiền thành công, vui lòng chờ duyệt").send(res);
     }),
     postRecharge: (0, asyncHandler_1.default)(async (req, res) => {
         const { amount, payment_method, rateUsd } = req.body;
@@ -82,9 +107,10 @@ const UserController = {
         return new ApiResponse_1.SuccessResponse("User", user).send(res);
     }),
     updateProfile: (0, asyncHandler_1.default)(async (req, res) => {
-        const { avatar, first_name, last_name, current_point_type, enable_sound, is_show_balance, } = req.body;
+        const { point_type, avatar, first_name, last_name, current_point_type, enable_sound, is_show_balance, } = req.body;
         const user = req.user;
         user.avatar = avatar || user.avatar;
+        user.current_point_type = point_type || user.point_type;
         user.first_name = first_name || user.first_name;
         user.last_name = last_name || user.last_name;
         user.current_point_type = current_point_type || user.current_point_type;
