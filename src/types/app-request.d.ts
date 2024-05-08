@@ -1,6 +1,7 @@
 import { Request } from "express";
 
 import Keystore from "../database/model/Keystore";
+import { Socket } from "socket.io";
 
 declare interface PublicRequest extends Request {
   apiKey: any;
@@ -14,6 +15,7 @@ declare interface ProtectedRequest extends RoleRequest {
   user: any;
   accessToken: string;
   keystore: Keystore;
+  io:Socket
 }
 
 declare interface Tokens {

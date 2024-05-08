@@ -7,7 +7,7 @@ import { Bet } from "./socket/bet";
 import cors from "cors";
 import "./database"; // initialize database
 import "./redis";
-import initCron from './cron'
+import initCron from "./cron";
 import routes from "./routes";
 import { Server } from "http";
 
@@ -15,6 +15,7 @@ import { Socket } from "socket.io";
 import { SocketServer } from "./socket/socket-server";
 import { getTradeRate } from "./helpers/bet";
 import bodyParser from "body-parser";
+import { getSocketInstance, initializeSocket } from "./socket/socketInstance";
 
 const app = express();
 
@@ -29,24 +30,18 @@ app.use(cors({ origin: "*", optionsSuccessStatus: 200 }));
 // Routes
 app.use("/api", routes);
 
-
-// Socket
 const httpServer: Server = require("http").createServer(app);
-const io = require("socket.io")(httpServer, {
-  cors: {
-    origin: "*",
-  },
-});
 
-io.on("connection", (socket: Socket) => {
-  SocketServer(socket);
-});
+initializeSocket(httpServer);
 
 getTradeRate().then((price) => {
+  const io = getSocketInstance();
   const bet = new Bet(io, price);
   bet.start();
 });
 
-initCron()
+
+
+initCron();
 
 export default httpServer;

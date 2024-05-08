@@ -245,6 +245,8 @@ class Bet {
 
   public start(): void {
     let data = this.getDataPrice();
+  
+    
     setInterval(() => {
       data = this.getDataPrice();
 

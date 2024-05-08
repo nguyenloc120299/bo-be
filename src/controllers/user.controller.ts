@@ -20,13 +20,14 @@ import {
 } from "../constants/define";
 import axios from "axios";
 import { UserModel } from "../database/model/User";
+import { getSocketInstance } from "../socket/socketInstance";
+import { getValue } from "../redis";
 
 const UserController = {
   callBackRecharge: asyncHandler(async (req: ProtectedRequest, res) => {
-    const { sign, result, amount, tradeNo, outTradeNo } = req.body;
-    console.log("====================================");
-    console.log(sign, result, amount, tradeNo, outTradeNo);
-    console.log("====================================");
+    const { outTradeNo } = req.body;
+    const socket = getSocketInstance();
+    const usersSocket = await getValue("users_socket");
 
     const transation = await UserTransactionModel.findOne({
       _id: outTradeNo,
@@ -34,17 +35,19 @@ const UserController = {
     });
     if (transation) {
       const user = await UserModel.findById(transation.user);
-      if (!user) return res.send("success");
+      if (!user) return res.send("fail");
       user.real_balance = user.real_balance + transation.value;
       transation.transaction_status = TRANSACTION_STATUS_FINISH;
 
       await user.save();
       await transation.save();
     }
+    socket.emit("recharge", true);
     return res.send("success");
   }),
   postWithdrawal: asyncHandler(async (req: ProtectedRequest, res) => {
-    const { withdrawal_amount } = req.body;
+    const { amount } = req.body;
+    const withdrawal_amount = parseFloat(amount);
     const minimum_withdrawal = 5;
     if (withdrawal_amount > req.user.real_balance)
       return new BadRequestResponse(
@@ -62,8 +65,14 @@ const UserController = {
       value: -withdrawal_amount,
       payment_type: PAYMENT_TYPE_BANK,
     });
-    req.user.real_balance =req.user.real_balance -withdrawal_amount
-    return new SuccessMsgResponse("Đã gửi lệnh rút tiền thành công, vui lòng chờ duyệt").send(res)
+    req.user.real_balance = req.user.real_balance - withdrawal_amount;
+    await UserModel.findByIdAndUpdate(req.user._id, req.user, {
+      new: true,
+    });
+    await transactionWithdraw.save();
+    return new SuccessMsgResponse(
+      "Đã gửi lệnh rút tiền thành công, vui lòng chờ duyệt"
+    ).send(res);
   }),
   postRecharge: asyncHandler(async (req: ProtectedRequest, res) => {
     const { amount, payment_method, rateUsd } = req.body;
