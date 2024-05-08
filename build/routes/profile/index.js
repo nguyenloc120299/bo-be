@@ -10,6 +10,7 @@ const profileRouter = express_1.default.Router();
 /*-------------------------------------------------------------------------*/
 profileRouter.use(authentication_1.default);
 /*-------------------------------------------------------------------------*/
+profileRouter.post("/recharge", user_controller_1.UserController.postRecharge);
 profileRouter.get("/me", user_controller_1.UserController.getProfile);
 profileRouter.post("/logout", user_controller_1.UserController.logOut);
 exports.default = profileRouter;
