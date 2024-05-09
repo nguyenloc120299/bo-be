@@ -16,6 +16,7 @@ profileRouter.post("/withdrawal", UserController.postWithdrawal);
 
 profileRouter.get("/me", UserController.getProfile);
 
+profileRouter.get('/two-fa-key',UserController.getTwoFaKey)
 profileRouter.post("/logout", UserController.logOut);
 
 export default profileRouter;

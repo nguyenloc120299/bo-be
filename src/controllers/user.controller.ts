@@ -1,5 +1,7 @@
 import { ProtectedRequest, PublicRequest } from "app-request";
 import crypto from "crypto";
+import speakeasy from "speakeasy";
+import qrcode from "qrcode";
 import asyncHandler from "../helpers/asyncHandler";
 import {
   BadRequestResponse,
@@ -22,6 +24,7 @@ import axios from "axios";
 import { UserModel } from "../database/model/User";
 import { getSocketInstance } from "../socket/socketInstance";
 import { getValue } from "../redis";
+import _ from "lodash";
 
 const UserController = {
   callBackRecharge: asyncHandler(async (req: ProtectedRequest, res) => {
@@ -45,6 +48,7 @@ const UserController = {
     socket.emit("recharge", true);
     return res.send("success");
   }),
+
   postWithdrawal: asyncHandler(async (req: ProtectedRequest, res) => {
     const { amount } = req.body;
     const withdrawal_amount = parseFloat(amount);
@@ -74,6 +78,7 @@ const UserController = {
       "Đã gửi lệnh rút tiền thành công, vui lòng chờ duyệt"
     ).send(res);
   }),
+
   postRecharge: asyncHandler(async (req: ProtectedRequest, res) => {
     const { amount, payment_method, rateUsd } = req.body;
     if (amount < 5)
@@ -140,7 +145,8 @@ const UserController = {
   getProfile: asyncHandler(async (req: ProtectedRequest, res) => {
     const user = req.user;
     if (!user) return new BadRequestResponse("Bạn chưa đăng nhập").send(res);
-    return new SuccessResponse("User", user).send(res);
+    const userData = _.omit(user, ['otp', 'password']);
+    return new SuccessResponse("User", userData).send(res);
   }),
 
   updateProfile: asyncHandler(async (req: ProtectedRequest, res) => {
@@ -167,6 +173,25 @@ const UserController = {
     return new SuccessResponse("Đã cập nhật thành công", user).send(res);
   }),
 
+  getTwoFaKey: asyncHandler(async (req: ProtectedRequest, res) => {
+    const secret = speakeasy.generateSecret({ length: 20 });
+    const authString = speakeasy.otpauthURL({
+      secret: secret.base32,
+      label: "BIZKUB",
+      issuer: "BIZKUB",
+      encoding: "base32",
+    });
+    qrcode.toDataURL(authString, (err, qrCodeData) => {
+      if (err) {
+        return res.status(500).json({ message: "Internal Server Error" });
+      }
+
+      return res.json({
+        secret: secret.ascii,
+        auth_string: qrCodeData,
+      });
+    });
+  }),
   logOut: asyncHandler(async (req: ProtectedRequest, res) => {
     await KeystoreRepo.remove(req.keystore._id);
     new SuccessMsgResponse("Logout success").send(res);

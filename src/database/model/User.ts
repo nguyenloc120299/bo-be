@@ -20,6 +20,12 @@ const schema = new Schema(
       type: Schema.Types.String,
       trim: true,
     },
+    otp: {
+      type: Schema.Types.String,
+    },
+    expired: {
+      type: Schema.Types.Number,
+    },
     real_balance: {
       type: Schema.Types.Number,
       default: 0,
@@ -38,10 +44,10 @@ const schema = new Schema(
       type: Schema.Types.Number,
     },
     before_identity_card: {
-      type: Schema.Types.Number,
+      type: Schema.Types.String,
     },
     after_identity_card: {
-      type: Schema.Types.Number,
+      type: Schema.Types.String,
     },
     enable_sound: {
       type: Schema.Types.Boolean,
@@ -74,7 +80,6 @@ const schema = new Schema(
       unique: true,
       sparse: true, // allows null
       trim: true,
-
     },
     password: {
       type: Schema.Types.String,
