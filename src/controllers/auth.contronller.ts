@@ -1,7 +1,11 @@
 import { PublicRequest, RoleRequest } from "app-request";
 import asyncHandler from "../helpers/asyncHandler";
-import { OAuth2Client } from "google-auth-library";
-import { BadRequestResponse, SuccessResponse } from "../core/ApiResponse";
+
+import {
+  BadRequestResponse,
+  SuccessMsgResponse,
+  SuccessResponse,
+} from "../core/ApiResponse";
 import {
   POINT_TYPE_DEMO,
   TRANSACTION_STATUS_FINISH,
@@ -17,10 +21,9 @@ import { RoleModel } from "../database/model/Role";
 import { jwtDecode } from "jwt-decode";
 import { sendMailOTP } from "../helpers/mail";
 import _ from "lodash";
+import { getValue, setValue } from "../redis";
 
-const client = new OAuth2Client(
-  `782297257397-t9ntj9ikius66fp40evqtb95m1ecb0dt.apps.googleusercontent.com`
-);
+
 
 const validateEmail = (email?: string) => {
   return String(email)
@@ -39,6 +42,35 @@ function generateOTP(limit: number) {
   return OTP;
 }
 
+const sendOTP = async (user: any) => {
+  let dataOtps = (await getValue("otps")) as any;
+
+
+  dataOtps = dataOtps ? JSON.parse(dataOtps) : [];
+
+  let otpGenerate = generateOTP(5);
+
+  while (
+    dataOtps.some(
+      (otpData: any) => otpData.user === user && otpData.otp === otpGenerate
+    )
+  ) {
+    otpGenerate = generateOTP(5);
+  }
+
+  dataOtps.push({
+    user: user,
+    otp: otpGenerate,
+    time: new Date().getTime() + 1000 *60 *3,
+  });
+
+  await setValue("otps", JSON.stringify(dataOtps), 3);
+
+  await sendMailOTP(user, "Xác nhận tài khoản", otpGenerate);
+
+  return otpGenerate;
+};
+
 const AuthController = {
   googleLogin: asyncHandler(async (req: PublicRequest, res) => {
     const credentialRes = jwtDecode(req.body.credential) as any;
@@ -52,7 +84,7 @@ const AuthController = {
       await KeystoreRepo.create(user, accessTokenKey, refreshTokenKey);
 
       const tokens = await createTokens(user, accessTokenKey, refreshTokenKey);
-      const userData = _.omit(user, ['otp', 'password']);
+      const userData = _.omit(user, ["otp", "password"]);
       return new SuccessResponse("Đăng nhập thành công", {
         user: userData,
         tokens,
@@ -91,13 +123,14 @@ const AuthController = {
         value: 1000,
         note: "Nạp demo khi đăng kí thành công",
       });
-      const userData = _.omit(new_user, ['otp', 'password']);
+      const userData = _.omit(new_user, ["otp", "password"]);
       return new SuccessResponse(
         "Đã tạo tài khoản thành công. Xin vui lòng đăng nhập",
         { user: userData, tokens }
       ).send(res);
     }
   }),
+
   signUp: asyncHandler(async (req: PublicRequest, res) => {
     const { email, password, user_name } = req.body;
     if (!email || !validateEmail(email))
@@ -107,7 +140,7 @@ const AuthController = {
     if (!user_name)
       return new BadRequestResponse("Nickname không được để trống").send(res);
     const member = await UserModel.findOne({ email });
-    const otp = generateOTP(5);
+
     if (member)
       return new BadRequestResponse(
         "Email  đã tồn tại trong hệ thống. Vui lòng thử lại với Emal khác"
@@ -115,21 +148,24 @@ const AuthController = {
 
     const accessTokenKey = crypto.randomBytes(64).toString("hex");
     const refreshTokenKey = crypto.randomBytes(64).toString("hex");
+
     const role = await RoleModel.findOne({ code: "USER" })
       .select("+code")
       .lean()
       .exec();
+
     if (!role) throw new BadRequestResponse("Role must be defined").send(res);
+
     const user = await UserModel.create({
       user_mode: USER_MODE_MEMBER,
       email,
       password,
       user_name,
       roles: [role],
-      otp,
-      expired: new Date().getTime(),
     });
-    await sendMailOTP(email, "Xác nhận tài khoản", otp);
+
+    await sendOTP(user);
+
     const keystore = await KeystoreRepo.create(
       user,
       accessTokenKey,
@@ -149,7 +185,7 @@ const AuthController = {
       value: 1000,
       note: "Nạp demo khi đăng kí thành công",
     });
-    const userData = _.omit(user, ['otp', 'password']);
+    const userData = _.omit(user, ["otp", "password"]);
     return new SuccessResponse(
       "Đã tạo tài khoản thành công. Xin vui lòng đăng nhập",
       { user: userData, tokens }
@@ -169,13 +205,12 @@ const AuthController = {
       );
 
     if (!user.verified) {
-      const otp = generateOTP(5);
-      user.otp = otp;
-      user.expired = new Date().getTime();
-      await user.save();
-      await sendMailOTP(email, "Xác nhận tài khoản", otp);
+      await sendOTP(user);
+
+      const userData = _.omit(user, ["otp", "password"]);
+
       return new SuccessResponse("Đăng nhập thành công", {
-        user: user,
+        user: userData,
       }).send(res);
     }
 
@@ -185,14 +220,48 @@ const AuthController = {
     await KeystoreRepo.create(user, accessTokenKey, refreshTokenKey);
 
     const tokens = await createTokens(user, accessTokenKey, refreshTokenKey);
-    const userData = _.omit(user, ['otp', 'password']);
+    const userData = _.omit(user, ["otp", "password"]);
     return new SuccessResponse("Đăng nhập thành công", {
       user: userData,
       tokens,
     }).send(res);
   }),
 
-  senOTP: asyncHandler(async (req: PublicRequest, res) => {}),
+  verifyOtp: asyncHandler(async (req: PublicRequest, res) => {
+    const { otp } = req.body;
+
+    let dataOtps = (await getValue("otps")) as any;
+
+    dataOtps = dataOtps ? JSON.parse(dataOtps) : [];
+
+    const otpData = dataOtps.find((otpData: any) => otpData.otp === otp);
+
+    if (!otpData) return new BadRequestResponse("Mã OTP không đúng").send(res);
+
+    if(otpData.time < new Date().getTime()) return new BadRequestResponse('Mã OTP đã hết hạn').send(res)
+
+    const user = otpData.user;
+
+    
+    if (user) {
+      user.verified = true;
+      await UserModel.findByIdAndUpdate(user._id, user, {
+        new: true,
+      });
+    }
+
+    return new SuccessResponse("OTP verified successfully", true).send(res);
+  }),
+
+  sendOTP: asyncHandler(async (req: PublicRequest, res) => {
+    const { userId } = req.body;
+    const user = await UserModel.findById(userId);
+    if (!user) return new BadRequestResponse("Không tìm thấy user").send(res);
+    await sendOTP(user);
+    return new SuccessMsgResponse(
+      "Đã gửi OTP. Vui lòng kiếm tra mail của bạn"
+    ).send(res); 
+  }),
 };
 
 export { AuthController };

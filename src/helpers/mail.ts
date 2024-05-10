@@ -8,10 +8,10 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-export const sendMailOTP = async (mail: string, title: string, otp: string) => {
+export const sendMailOTP = async (user: any, title: string, otp: string) => {
   const mainOptions = {
     from: "Bizkub",
-    to: mail,
+    to:user?.email,
     subject: title,
     html: `
     <div
@@ -120,14 +120,12 @@ export const sendMailOTP = async (mail: string, title: string, otp: string) => {
                         color: #13171c;
                       "
                     >
-                      Dear <b>test888</b>,
+                      Dear <b>${user?.user_name}</b>,
                     </td>
                   </tr>
                   <tr>
                     <td style="padding-top: 5px; padding-bottom: 5px">
-                      There was a request to turn off 2FA for your account.
-                      Below is your verification code. Please do not disclose
-                      it to anyone.
+                    Dưới đây là mã xác minh của bạn. Vui lòng không tiết lộ mã này cho bất  kì ai
                     </td>
                   </tr>
                   <tr>
@@ -137,19 +135,19 @@ export const sendMailOTP = async (mail: string, title: string, otp: string) => {
                   </tr>
                   <tr>
                     <td style="padding-top: 5px; padding-bottom: 5px">
-                      If this wasn't you, we recommend you to email us at
+                      Nếu đây không phải là bạn vui lòng gửi thông tin cho chúng tôi theo địa chỉ
                       <a
                         href="mailto:contact@bizkub.net"
                         style="text-decoration: none; color: #ee4b60"
                         target="_blank"
                         >contact@bizkub.net</a
                       >
-                      to report this incident.
+                      để báo cáo sự việc này  
                     </td>
                   </tr>
                   <tr>
                     <td style="padding-top: 25px; padding-bottom: 5px">
-                      Best regards,
+                    Trân trọng,  
                     </td>
                   </tr>
                   <tr>
@@ -171,7 +169,7 @@ export const sendMailOTP = async (mail: string, title: string, otp: string) => {
             <div style="border-top: 1.5px solid #cfdce8; width: 30%"></div>
             <div style="padding: 28px 0px">
               <span style="text-align: center"
-                >Copyright © 2021 Bizkub. All Rights Reserved.</span
+                >Copyright © 2024 Bizkub. All Rights Reserved.</span
               >
             </div>
           </td>

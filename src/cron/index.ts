@@ -9,7 +9,7 @@ import {
   TRANSACTION_TYPE_RECHARGE,
 } from "../constants/define";
 import axios from "axios";
-import { setValue } from "../redis";
+import { getValue, setValue } from "../redis";
 
 const getRateUSD = async () => {
   try {
@@ -47,6 +47,24 @@ const initCron = () => {
 
   cron.schedule("0 */8 * * *", async () => {
     getRateUSD();
+  });
+
+  cron.schedule("*/3 * * * *", async () => {
+    let dataOtps = (await getValue("otps")) as any;
+    dataOtps = dataOtps ? JSON.parse(dataOtps) : [];
+    const expiredOtps = dataOtps.filter((otpData: any) => {
+      return new Date().getTime() >= otpData.time;
+    });
+    
+
+    expiredOtps.forEach(async (expiredOtp: any) => {
+      const index = dataOtps.findIndex((otpData: any) => otpData.time === expiredOtp.time);
+      if (index !== -1) {
+        dataOtps.splice(index, 1);
+        await setValue("otps", JSON.stringify(dataOtps));
+      }
+    });
+    
   });
 };
 
