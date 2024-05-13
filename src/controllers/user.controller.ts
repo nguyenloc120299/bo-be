@@ -158,6 +158,10 @@ const UserController = {
       current_point_type,
       enable_sound,
       is_show_balance,
+      address,
+      name_bank,
+      number_bank,
+      account_name
     } = req.body;
     const user = req.user;
     user.avatar = avatar || user.avatar;
@@ -167,6 +171,10 @@ const UserController = {
     user.current_point_type = current_point_type || user.current_point_type;
     user.enable_sound = enable_sound || user.enable_sound;
     user.is_show_balance = is_show_balance || user.is_show_balance;
+    user.address=address || user.address
+    user.name_bank=name_bank || user.name_bank
+    user.number_bank=number_bank || user.number_bank
+    user.account_name=account_name || user.account_name
     await UserModel.findByIdAndUpdate(user._id, user, {
       new: true,
     });
@@ -192,6 +200,7 @@ const UserController = {
       });
     });
   }),
+
   logOut: asyncHandler(async (req: ProtectedRequest, res) => {
     await KeystoreRepo.remove(req.keystore._id);
     new SuccessMsgResponse("Logout success").send(res);

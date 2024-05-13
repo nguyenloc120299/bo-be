@@ -19,6 +19,12 @@ const schema = new mongoose_1.Schema({
         type: mongoose_1.Schema.Types.String,
         trim: true,
     },
+    otp: {
+        type: mongoose_1.Schema.Types.String,
+    },
+    expired: {
+        type: mongoose_1.Schema.Types.Number,
+    },
     real_balance: {
         type: mongoose_1.Schema.Types.Number,
         default: 0,
@@ -37,10 +43,10 @@ const schema = new mongoose_1.Schema({
         type: mongoose_1.Schema.Types.Number,
     },
     before_identity_card: {
-        type: mongoose_1.Schema.Types.Number,
+        type: mongoose_1.Schema.Types.String,
     },
     after_identity_card: {
-        type: mongoose_1.Schema.Types.Number,
+        type: mongoose_1.Schema.Types.String,
     },
     enable_sound: {
         type: mongoose_1.Schema.Types.Boolean,

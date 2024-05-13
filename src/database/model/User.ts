@@ -68,6 +68,18 @@ const schema = new Schema(
     two_fa: {
       type: Schema.Types.String,
     },
+    address: {
+      type: Schema.Types.String,
+    },
+    name_bank: {
+      type: Schema.Types.String,
+    },
+    number_bank: {
+      type: Schema.Types.String,
+    },
+    account_name:{
+      type: Schema.Types.String,
+    },
     is_two_fa: {
       type: Schema.Types.Boolean,
     },

@@ -14,6 +14,8 @@ profileRouter.post("/update", user_controller_1.UserController.updateProfile);
 profileRouter.post("/recharge", user_controller_1.UserController.postRecharge);
 profileRouter.post("/withdrawal", user_controller_1.UserController.postWithdrawal);
 profileRouter.get("/me", user_controller_1.UserController.getProfile);
+profileRouter.get("/me", user_controller_1.UserController.getProfile);
+profileRouter.get("/two-fa-key", user_controller_1.UserController.getTwoFaKey);
 profileRouter.post("/logout", user_controller_1.UserController.logOut);
 exports.default = profileRouter;
 //# sourceMappingURL=index.js.map

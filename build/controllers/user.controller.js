@@ -5,6 +5,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserController = void 0;
 const crypto_1 = __importDefault(require("crypto"));
+const speakeasy_1 = __importDefault(require("speakeasy"));
+const qrcode_1 = __importDefault(require("qrcode"));
 const asyncHandler_1 = __importDefault(require("../helpers/asyncHandler"));
 const ApiResponse_1 = require("../core/ApiResponse");
 const KeystoreRepo_1 = __importDefault(require("../database/repository/KeystoreRepo"));
@@ -14,6 +16,7 @@ const axios_1 = __importDefault(require("axios"));
 const User_1 = require("../database/model/User");
 const socketInstance_1 = require("../socket/socketInstance");
 const redis_1 = require("../redis");
+const lodash_1 = __importDefault(require("lodash"));
 const UserController = {
     callBackRecharge: (0, asyncHandler_1.default)(async (req, res) => {
         const { outTradeNo } = req.body;
@@ -104,7 +107,8 @@ const UserController = {
         const user = req.user;
         if (!user)
             return new ApiResponse_1.BadRequestResponse("Bạn chưa đăng nhập").send(res);
-        return new ApiResponse_1.SuccessResponse("User", user).send(res);
+        const userData = lodash_1.default.omit(user, ['otp', 'password']);
+        return new ApiResponse_1.SuccessResponse("User", userData).send(res);
     }),
     updateProfile: (0, asyncHandler_1.default)(async (req, res) => {
         const { point_type, avatar, first_name, last_name, current_point_type, enable_sound, is_show_balance, } = req.body;
@@ -120,6 +124,24 @@ const UserController = {
             new: true,
         });
         return new ApiResponse_1.SuccessResponse("Đã cập nhật thành công", user).send(res);
+    }),
+    getTwoFaKey: (0, asyncHandler_1.default)(async (req, res) => {
+        const secret = speakeasy_1.default.generateSecret({ length: 20 });
+        const authString = speakeasy_1.default.otpauthURL({
+            secret: secret.base32,
+            label: "BIZKUB",
+            issuer: "BIZKUB",
+            encoding: "base32",
+        });
+        qrcode_1.default.toDataURL(authString, (err, qrCodeData) => {
+            if (err) {
+                return res.status(500).json({ message: "Internal Server Error" });
+            }
+            return res.json({
+                secret: secret.ascii,
+                auth_string: qrCodeData,
+            });
+        });
     }),
     logOut: (0, asyncHandler_1.default)(async (req, res) => {
         await KeystoreRepo_1.default.remove(req.keystore._id);

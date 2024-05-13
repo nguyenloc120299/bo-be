@@ -35,7 +35,7 @@ mongoose
   });
 
 // CONNECTION EVENTS
-// When successfully connected
+// When successfully connectedping
 mongoose.connection.on("connected", () => {
   console.log("Mongoose connected name: BO");
 });

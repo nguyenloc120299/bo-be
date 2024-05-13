@@ -20,15 +20,29 @@ async function keyExists(...keys) {
     return (await client.exists(keys)) ? true : false;
 }
 exports.keyExists = keyExists;
-async function setValue(key, value, expireAt = null) {
-    if (expireAt)
-        return client.pSetEx(key, expireAt.getTime(), `${value}`);
+async function setValue(key, value, expireMinutes = null) {
+    if (expireMinutes)
+        return client.pSetEx(key, new Date(Date.now() + expireMinutes * 60 * 1000).getTime(), `${value}`);
     else
         return client.set(key, `${value}`);
 }
 exports.setValue = setValue;
 async function getValue(key) {
-    return client.get(key);
+    try {
+        let value = await client.get(key);
+        if (!value) {
+            return null;
+        }
+        if (typeof value !== "string") {
+            console.error(`Invalid data stored in Redis for key '${key}'.`);
+            return null;
+        }
+        return value;
+    }
+    catch (error) {
+        console.error("Error while getting value from Redis:", error);
+        return null;
+    }
 }
 exports.getValue = getValue;
 exports.default = client;
