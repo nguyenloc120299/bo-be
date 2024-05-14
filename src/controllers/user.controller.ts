@@ -50,7 +50,7 @@ const UserController = {
   }),
 
   postWithdrawal: asyncHandler(async (req: ProtectedRequest, res) => {
-    const { amount } = req.body;
+    const { amount,rateUsd } = req.body;
     const withdrawal_amount = parseFloat(amount);
     const minimum_withdrawal = 5;
     if (withdrawal_amount > req.user.real_balance)
@@ -68,6 +68,7 @@ const UserController = {
       transaction_status: TRANSACTION_STATUS_PENDING,
       value: -withdrawal_amount,
       payment_type: PAYMENT_TYPE_BANK,
+      fiat_amount:(amount * (rateUsd || 25000)).toFixed(2)
     });
     req.user.real_balance = req.user.real_balance - withdrawal_amount;
     await UserModel.findByIdAndUpdate(req.user._id, req.user, {
@@ -92,6 +93,7 @@ const UserController = {
       transaction_status: TRANSACTION_STATUS_PENDING,
       value: amount,
       payment_type: payment_method,
+      fiat_amount:amount * (rateUsd || 25000)
     });
 
     const requestData = {
@@ -144,7 +146,7 @@ const UserController = {
 
   getProfile: asyncHandler(async (req: ProtectedRequest, res) => {
     const user = req.user;
-    if (!user) return new BadRequestResponse("Bạn chưa đăng nhập").send(res);
+    if (!user) return new BadRequestResponse("Bạn chưa đăng nhập").send(res); 
     const userData = _.omit(user, ['otp', 'password']);
     return new SuccessResponse("User", userData).send(res);
   }),

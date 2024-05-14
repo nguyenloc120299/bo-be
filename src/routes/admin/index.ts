@@ -21,4 +21,10 @@ adminRouter.get("/deposit", AdminControllers.getDeposit);
 
 adminRouter.get("/withdrawl", AdminControllers.getWithdraw);
 
+adminRouter.get("/statistics-payment", AdminControllers.statisticsDeposit);
+
+adminRouter.post("/handle-withdraw", AdminControllers.handleWithdrawal);
+
+adminRouter.get("/histories-bet", AdminControllers.historyBet);
+
 export default adminRouter;

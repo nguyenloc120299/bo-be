@@ -20,6 +20,7 @@ declare interface ProtectedRequest extends RoleRequest {
     page: string;
     transaction_status:string
     limit:string
+    search:string
   };
 }
 

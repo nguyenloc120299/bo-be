@@ -10,15 +10,18 @@ import { RoleModel } from "../../database/model/Role";
 import { UserTransactionModel } from "../../database/model/UserTransation";
 import {
   POINT_TYPE_REAL,
+  TRANSACTION_STATUS_CANCEL,
   TRANSACTION_STATUS_FINISH,
+  TRANSACTION_STATUS_PENDING,
   TRANSACTION_TYPE_BET,
   TRANSACTION_TYPE_RECHARGE,
   TRANSACTION_TYPE_WITHDRAWAL,
 } from "../../constants/define";
+import e from "express";
+import mongoose, { isObjectIdOrHexString } from "mongoose";
 
 const PAGE_SIZE = 20;
 const AdminControllers = {
-
   loginAdmin: asyncHandler(async (req: PublicRequest, res) => {
     const { email, password } = req.body;
     const user = await UserModel.findOne({ email }).populate("roles");
@@ -55,13 +58,25 @@ const AdminControllers = {
     if (req.query.page && !isNaN(parseInt(req.query.page))) {
       page = parseInt(req.query.page);
     }
+    const search = req.query.search;
 
+    const searchCriteria = search ? {
+      $or: [
+        { _id: isObjectIdOrHexString(search) ? new mongoose.Types.ObjectId(search) : search },
+        { email: search },
+        { user_name: search }
+      ]
+    } : {};
+    
     const userRole = await RoleModel.findOne({ code: "USER" });
 
     const users = await UserModel.aggregate([
       {
         $match: {
-          roles: userRole?._id,
+          $and: [
+            searchCriteria,
+            { roles: userRole?._id }
+          ]
         },
       },
       {
@@ -144,12 +159,13 @@ const AdminControllers = {
       transaction_type: TRANSACTION_TYPE_RECHARGE,
     })
       .populate("user")
+      .sort({ createdAt: -1 })
       .skip((page - 1) * 20)
       .limit(20);
     return new SuccessResponse("ok", deposits).send(res);
   }),
 
-  getWithdraw:asyncHandler(async (req: ProtectedRequest, res) => {
+  getWithdraw: asyncHandler(async (req: ProtectedRequest, res) => {
     let page = 1;
     if (req.query.page && !isNaN(parseInt(req.query.page))) {
       page = parseInt(req.query.page);
@@ -159,11 +175,108 @@ const AdminControllers = {
       transaction_type: TRANSACTION_TYPE_WITHDRAWAL,
     })
       .populate("user")
+      .sort({ createdAt: -1 })
       .skip((page - 1) * 20)
       .limit(20);
 
-      return new SuccessResponse('ok',withdrawls).send(res)
-  })
-  
+    return new SuccessResponse("ok", withdrawls).send(res);
+  }),
+
+  statisticsDeposit: asyncHandler(async (req: ProtectedRequest, res) => {
+    const data = await UserTransactionModel.aggregate([
+      {
+        $match: {
+          $and: [
+            { point_type: POINT_TYPE_REAL },
+            { transaction_status: TRANSACTION_STATUS_FINISH },
+            { transaction_type: TRANSACTION_TYPE_RECHARGE },
+          ],
+        },
+      },
+      {
+        $group: {
+          _id: 0,
+          totalValue: { $sum: "$value" },
+          totalValueFiat: { $sum: "$fiat_amount" },
+        },
+      },
+    ]);
+
+    const data1 = await UserTransactionModel.aggregate([
+      {
+        $match: {
+          $and: [
+            { point_type: POINT_TYPE_REAL },
+            { transaction_status: TRANSACTION_STATUS_FINISH },
+            { transaction_type: TRANSACTION_TYPE_WITHDRAWAL },
+          ],
+        },
+      },
+      {
+        $group: {
+          _id: 0,
+          totalValue: { $sum: "$value" },
+          totalValueFiat: { $sum: "$fiat_amount" },
+        },
+      },
+    ]);
+
+    const totalValueDeposit = data[0].totalValue;
+    const totalValueFiat = data[0].totalValueFiat;
+    const totalValueWithdraw = data1[0].totalValue;
+    const totalValueFiatWithdraw = data[0].totalValueFiat;
+
+    return new SuccessResponse("ok", {
+      totalValueDeposit,
+      totalValueFiat,
+      totalValueWithdraw,
+      totalValueFiatWithdraw,
+    }).send(res);
+  }),
+
+  handleWithdrawal: asyncHandler(async (req: ProtectedRequest, res) => {
+    const { transId, isResolve, note } = req.body;
+    const transaction = await UserTransactionModel.findOne({
+      _id: transId,
+      transaction_status: TRANSACTION_STATUS_PENDING,
+      transaction_type: TRANSACTION_TYPE_WITHDRAWAL,
+    });
+
+    if (!transaction)
+      return new BadRequestResponse("Không tìm thấy giao dịch này").send(res);
+
+    const user = await UserModel.findById(transaction.user);
+
+    if (!user) return new BadRequestResponse("Không tìm thấy user").send(res);
+
+    if (isResolve) transaction.transaction_status = TRANSACTION_STATUS_FINISH;
+    else {
+      transaction.transaction_status = TRANSACTION_STATUS_CANCEL;
+      user.real_balance = (user?.real_balance || 0) - transaction.value;
+      transaction.note = note;
+    }
+
+    await user.save();
+    await transaction.save();
+    return new SuccessMsgResponse(
+      `${isResolve ? "Đã duyệt" : "Đã hủy"} rút tiền`
+    ).send(res);
+  }),
+
+  historyBet: asyncHandler(async (req: ProtectedRequest, res) => {
+    let page = 1;
+    if (req.query.page && !isNaN(parseInt(req.query.page))) {
+      page = parseInt(req.query.page);
+    }
+
+    const histories = await UserTransactionModel.find({
+      transaction_type: TRANSACTION_TYPE_BET,
+    })
+      .populate("user")
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * 20)
+      .limit(20);
+    return new SuccessResponse("ok", histories).send(res);
+  }),
 };
 export { AdminControllers };
