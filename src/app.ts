@@ -11,10 +11,8 @@ import initCron from "./cron";
 import routes from "./routes";
 import { Server } from "http";
 
-import { Socket } from "socket.io";
-import { SocketServer } from "./socket/socket-server";
 import { getTradeRate } from "./helpers/bet";
-import bodyParser from "body-parser";
+
 import { getSocketInstance, initializeSocket } from "./socket/socketInstance";
 
 const app = express();

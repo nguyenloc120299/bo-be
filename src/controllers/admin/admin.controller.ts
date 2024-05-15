@@ -9,18 +9,56 @@ import crypto from "crypto";
 import { RoleModel } from "../../database/model/Role";
 import { UserTransactionModel } from "../../database/model/UserTransation";
 import {
+  BET_CONDITION_UP,
   POINT_TYPE_REAL,
   TRANSACTION_STATUS_CANCEL,
   TRANSACTION_STATUS_FINISH,
   TRANSACTION_STATUS_PENDING,
+  TRANSACTION_STATUS_PROCESSING,
   TRANSACTION_TYPE_BET,
   TRANSACTION_TYPE_RECHARGE,
   TRANSACTION_TYPE_WITHDRAWAL,
 } from "../../constants/define";
 import e from "express";
 import mongoose, { isObjectIdOrHexString } from "mongoose";
+import { getValue } from "../../redis";
 
 const PAGE_SIZE = 20;
+
+export const getAnalyticData1 = async () => {
+  const bet_id = await getValue("bet_id");
+  const override_result = await getValue("override_result");
+  const userBets = await UserTransactionModel.find({
+    bet_id,
+    transaction_type: TRANSACTION_TYPE_BET,
+    transaction_status: {
+      $in: [
+        TRANSACTION_STATUS_PENDING,
+        TRANSACTION_STATUS_FINISH,
+        TRANSACTION_STATUS_PROCESSING,
+      ],
+    },
+    point_type: POINT_TYPE_REAL,
+  }).populate("user");
+
+  const moneyTotal = userBets.reduce((total, transaction: any) => {
+    return total + transaction.bet_value;
+  }, 0);
+
+  const moneyUpTotal = userBets
+    .filter((transaction) => transaction.bet_condition === BET_CONDITION_UP)
+    .reduce((total, transaction: any) => {
+      return total + transaction.bet_value;
+    }, 0);
+  return {
+    bet_id,
+    override_result,
+    userBets,
+    moneyTotal,
+    moneyUpTotal,
+  };
+};
+
 const AdminControllers = {
   loginAdmin: asyncHandler(async (req: PublicRequest, res) => {
     const { email, password } = req.body;
@@ -98,7 +136,6 @@ const AdminControllers = {
                   ],
                 },
               },
-            
             },
             {
               $group: {
@@ -114,7 +151,7 @@ const AdminControllers = {
         },
       },
       {
-        $lookup:{
+        $lookup: {
           from: "userTransactions",
           let: { userId: "$_id" },
           pipeline: [
@@ -129,22 +166,19 @@ const AdminControllers = {
                   ],
                 },
               },
-            
             },
             {
               $group: {
                 _id: "$user",
                 totalValue: { $sum: "$value" },
-         
               },
             },
           ],
           as: "transactionStats1",
-
-        }
+        },
       },
       {
-        $lookup:{
+        $lookup: {
           from: "userTransactions",
           let: { userId: "$_id" },
           pipeline: [
@@ -159,19 +193,16 @@ const AdminControllers = {
                   ],
                 },
               },
-            
             },
             {
               $group: {
                 _id: "$user",
                 totalValue: { $sum: "$value" },
-         
               },
             },
           ],
           as: "transactionStats2",
-
-        }
+        },
       },
       {
         $skip: (page - 1) * PAGE_SIZE,
@@ -198,15 +229,15 @@ const AdminControllers = {
     const usersData = users.map((user) => {
       const transactionStat = user.transactionStats[0];
       const transactionStat1 = user.transactionStats1[0];
-      const transactionStat2 = user.transactionStats2[0]; 
+      const transactionStat2 = user.transactionStats2[0];
       return {
         ...user,
         countTotalBet: transactionStat ? transactionStat.totalBet : 0,
         countTotalWin: transactionStat ? transactionStat.totalWin : 0,
         countTotalLose: transactionStat ? transactionStat.totalLose : 0,
         totalValue: transactionStat ? transactionStat.totalValue : 0,
-        totalDeposit:transactionStat1 ? transactionStat1.totalValue : 0,
-        totalWithdraw:transactionStat2 ? transactionStat2.totalValue : 0
+        totalDeposit: transactionStat1 ? transactionStat1.totalValue : 0,
+        totalWithdraw: transactionStat2 ? transactionStat2.totalValue : 0,
       };
     });
     return new SuccessResponse("ok", {
@@ -375,5 +406,53 @@ const AdminControllers = {
       .limit(20);
     return new SuccessResponse("ok", histories).send(res);
   }),
+
+  getAdmin: asyncHandler(async (req: ProtectedRequest, res) => {
+    if (!req.user)
+      return new BadRequestResponse("Không tìm thấy user").send(res);
+    return new SuccessResponse("ok", req.user).send(res);
+  }),
+
+  getAnalyticData: asyncHandler(async (req: ProtectedRequest, res) => {
+    const bet_id = await getValue("bet_id");
+    const override_result = await getValue("override_result");
+    const userBets = await UserTransactionModel.find({
+      bet_id,
+      transaction_type: TRANSACTION_TYPE_BET,
+      transaction_status: {
+        $in: [
+          TRANSACTION_STATUS_PENDING,
+          TRANSACTION_STATUS_FINISH,
+          TRANSACTION_STATUS_PROCESSING,
+        ],
+      },
+      point_type: POINT_TYPE_REAL,
+    }).populate("user");
+
+    const moneyTotal = userBets.reduce((total, transaction: any) => {
+      return total + transaction.bet_value;
+    }, 0);
+
+    const moneyUpTotal = userBets
+      .filter((transaction) => transaction.bet_condition === BET_CONDITION_UP)
+      .reduce((total, transaction: any) => {
+        return total + transaction.bet_value;
+      }, 0);
+    return {
+      bet_id,
+      override_result,
+      userBets,
+      moneyTotal,
+      moneyUpTotal,
+    };
+    // return new SuccessResponse("ok", {
+    //   bet_id,
+    //   override_result,
+    //   userBets,
+    //   moneyTotal,
+    //   moneyUpTotal,
+    // }).send(res);
+  }),
 };
+
 export { AdminControllers };

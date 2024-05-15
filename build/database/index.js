@@ -10,7 +10,7 @@ const config_1 = require("../config");
 // const dbURI = `mongodb+srv://${db.user}:${db.password}@cluster0.bgzxt.mongodb.net/${db.name}?retryWrites=true&
 // w=majority`;
 // console.log(dbURI);
-const dbURI = `mongodb://103.57.220.91:27017/bo`;
+const dbURI = `mongodb://${config_1.db.user}:${config_1.db.password}@103.57.220.91:27017/${config_1.db.name}`;
 const options = {
     autoIndex: true,
     minPoolSize: config_1.db.minPoolSize,

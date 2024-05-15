@@ -10,7 +10,7 @@ const SocketServer = (socket: Socket) => {
       socketId: socket.id,
       user: user?._id,
     });
-    
+    socket.join('ADMIN')
     socket.join("MEMBER");
   });
 
@@ -22,8 +22,8 @@ const SocketServer = (socket: Socket) => {
     const index = users.findIndex((u: any) => u.socketId === socket.id);
     if (index !== -1) {
       users.splice(index, 1);
-
     }
+    socket.leave('ADMIN');
   });
 
 

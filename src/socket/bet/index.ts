@@ -6,8 +6,11 @@ import { Server } from "socket.io";
 import { getSum, getValueFromPercent, randomInArray } from "../../helpers/bet";
 import { getTradeValueCurrent } from "../binance";
 import { getValue, setValue } from "../../redis";
-import { UserController } from "../../controllers/user.controller";
 import { betController } from "../../controllers/bet.controller";
+import {
+  AdminControllers,
+  getAnalyticData1,
+} from "../../controllers/admin/admin.controller";
 
 interface BetData {
   lowPrice: number;
@@ -127,7 +130,13 @@ class Bet {
       }
     } else {
       if (this.bet_count === 1) {
-        let single_member_win_percent = parseInt("45");
+        let single_member_win_percent = parseInt("50");
+
+        getValue("member_win_percent").then((member_win_percent) => {
+          if (member_win_percent)
+            single_member_win_percent = parseInt(member_win_percent);
+        });
+
         let randomValue = random(5, 20);
         let condition = null;
         if (this.condition_up > 0) {
@@ -151,6 +160,7 @@ class Bet {
       } else if (this.bet_count > 1) {
         if (this.condition_up > this.condition_down) {
           let condition = randomInArray(["up", "down"]);
+
           if (
             this.currentClosePrice > this.currentOpenPrice &&
             this.second < MAX_SECOND_RESULT - 4
@@ -180,7 +190,6 @@ class Bet {
         }
       } else {
         this.realPrice = getTradeValueCurrent(this.initPrice);
-
         this.currentClosePrice = this.realPrice;
       }
     }
@@ -245,8 +254,7 @@ class Bet {
 
   public start(): void {
     let data = this.getDataPrice();
-  
-    
+
     setInterval(() => {
       data = this.getDataPrice();
 
@@ -255,6 +263,8 @@ class Bet {
       }
 
       if (this.isBet && this.second === MAX_SECOND_BET) {
+        console.log(this.createDateTime.toString());
+
         setValue("bet_id", this.createDateTime.toString());
       }
 
@@ -296,6 +306,9 @@ class Bet {
         });
         this.io.to("MEMBER").emit("WE_INDICATOR", changes);
       }
+      getAnalyticData1().then((res) => {
+        this.io.to("MEMBER").emit("analytic", res);
+      });
     }, 1000);
   }
 }
