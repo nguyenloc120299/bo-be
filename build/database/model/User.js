@@ -67,6 +67,18 @@ const schema = new mongoose_1.Schema({
     two_fa: {
         type: mongoose_1.Schema.Types.String,
     },
+    address: {
+        type: mongoose_1.Schema.Types.String,
+    },
+    name_bank: {
+        type: mongoose_1.Schema.Types.String,
+    },
+    number_bank: {
+        type: mongoose_1.Schema.Types.String,
+    },
+    account_name: {
+        type: mongoose_1.Schema.Types.String,
+    },
     is_two_fa: {
         type: mongoose_1.Schema.Types.Boolean,
     },

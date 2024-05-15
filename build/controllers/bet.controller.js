@@ -71,7 +71,7 @@ const betController = {
                 trans.open_price = open_price;
                 trans.close_price = close_price;
                 if (trans.bet_condition === bet_condition_result) {
-                    trans.value = (trans.bet_value || 0) * profitPercent;
+                    trans.value = ((trans.bet_value || 0) * profitPercent);
                     const user = await User_1.UserModel.findById(trans.user);
                     if (user) {
                         let updateField = {};

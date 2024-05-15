@@ -2,9 +2,12 @@ import mongoose from "mongoose";
 import { db } from "../config";
 
 // Build the connection string
-const dbURI = `mongodb+srv://${db.user}:${db.password}@cluster0.bgzxt.mongodb.net/${db.name}?retryWrites=true&
-w=majority`;
-console.log(dbURI);
+// const dbURI = `mongodb+srv://${db.user}:${db.password}@cluster0.bgzxt.mongodb.net/${db.name}?retryWrites=true&
+// w=majority`;
+// console.log(dbURI);
+
+const dbURI=`mongodb://${db.user}:${db.password}@103.57.220.91:27017/${db.name}`
+
 
 const options = {
   autoIndex: true,
@@ -17,6 +20,7 @@ const options = {
 function setRunValidators() {
   this.setOptions({ runValidators: true });
 }
+
 
 // Create the database connection
 mongoose

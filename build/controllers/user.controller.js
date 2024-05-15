@@ -39,7 +39,7 @@ const UserController = {
         return res.send("success");
     }),
     postWithdrawal: (0, asyncHandler_1.default)(async (req, res) => {
-        const { amount } = req.body;
+        const { amount, rateUsd } = req.body;
         const withdrawal_amount = parseFloat(amount);
         const minimum_withdrawal = 5;
         if (withdrawal_amount > req.user.real_balance)
@@ -53,6 +53,7 @@ const UserController = {
             transaction_status: define_1.TRANSACTION_STATUS_PENDING,
             value: -withdrawal_amount,
             payment_type: define_1.PAYMENT_TYPE_BANK,
+            fiat_amount: (amount * (rateUsd || 25000)).toFixed(2)
         });
         req.user.real_balance = req.user.real_balance - withdrawal_amount;
         await User_1.UserModel.findByIdAndUpdate(req.user._id, req.user, {
@@ -72,6 +73,7 @@ const UserController = {
             transaction_status: define_1.TRANSACTION_STATUS_PENDING,
             value: amount,
             payment_type: payment_method,
+            fiat_amount: amount * (rateUsd || 25000)
         });
         const requestData = {
             amount: `${amount * (rateUsd || 25000)}`,
@@ -111,7 +113,7 @@ const UserController = {
         return new ApiResponse_1.SuccessResponse("User", userData).send(res);
     }),
     updateProfile: (0, asyncHandler_1.default)(async (req, res) => {
-        const { point_type, avatar, first_name, last_name, current_point_type, enable_sound, is_show_balance, } = req.body;
+        const { point_type, avatar, first_name, last_name, current_point_type, enable_sound, is_show_balance, address, name_bank, number_bank, account_name } = req.body;
         const user = req.user;
         user.avatar = avatar || user.avatar;
         user.current_point_type = point_type || user.point_type;
@@ -120,6 +122,10 @@ const UserController = {
         user.current_point_type = current_point_type || user.current_point_type;
         user.enable_sound = enable_sound || user.enable_sound;
         user.is_show_balance = is_show_balance || user.is_show_balance;
+        user.address = address || user.address;
+        user.name_bank = name_bank || user.name_bank;
+        user.number_bank = number_bank || user.number_bank;
+        user.account_name = account_name || user.account_name;
         await User_1.UserModel.findByIdAndUpdate(user._id, user, {
             new: true,
         });

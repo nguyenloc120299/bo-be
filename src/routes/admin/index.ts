@@ -27,4 +27,6 @@ adminRouter.post("/handle-withdraw", AdminControllers.handleWithdrawal);
 
 adminRouter.get("/histories-bet", AdminControllers.historyBet);
 
+adminRouter.post("/update-user", AdminControllers.updateUserInfo);
+
 export default adminRouter;

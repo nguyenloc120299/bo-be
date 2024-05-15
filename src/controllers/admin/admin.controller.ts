@@ -60,23 +60,26 @@ const AdminControllers = {
     }
     const search = req.query.search;
 
-    const searchCriteria = search ? {
-      $or: [
-        { _id: isObjectIdOrHexString(search) ? new mongoose.Types.ObjectId(search) : search },
-        { email: search },
-        { user_name: search }
-      ]
-    } : {};
-    
+    const searchCriteria = search
+      ? {
+          $or: [
+            {
+              _id: isObjectIdOrHexString(search)
+                ? new mongoose.Types.ObjectId(search)
+                : search,
+            },
+            { email: search },
+            { user_name: search },
+          ],
+        }
+      : {};
+
     const userRole = await RoleModel.findOne({ code: "USER" });
 
     const users = await UserModel.aggregate([
       {
         $match: {
-          $and: [
-            searchCriteria,
-            { roles: userRole?._id }
-          ]
+          $and: [searchCriteria, { roles: userRole?._id }],
         },
       },
       {
@@ -95,6 +98,7 @@ const AdminControllers = {
                   ],
                 },
               },
+            
             },
             {
               $group: {
@@ -110,6 +114,66 @@ const AdminControllers = {
         },
       },
       {
+        $lookup:{
+          from: "userTransactions",
+          let: { userId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$user", "$$userId"] },
+                    { $eq: ["$point_type", POINT_TYPE_REAL] },
+                    { $eq: ["$transaction_status", TRANSACTION_STATUS_FINISH] },
+                    { $eq: ["$transaction_type", TRANSACTION_TYPE_RECHARGE] },
+                  ],
+                },
+              },
+            
+            },
+            {
+              $group: {
+                _id: "$user",
+                totalValue: { $sum: "$value" },
+         
+              },
+            },
+          ],
+          as: "transactionStats1",
+
+        }
+      },
+      {
+        $lookup:{
+          from: "userTransactions",
+          let: { userId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$user", "$$userId"] },
+                    { $eq: ["$point_type", POINT_TYPE_REAL] },
+                    { $eq: ["$transaction_status", TRANSACTION_STATUS_FINISH] },
+                    { $eq: ["$transaction_type", TRANSACTION_TYPE_WITHDRAWAL] },
+                  ],
+                },
+              },
+            
+            },
+            {
+              $group: {
+                _id: "$user",
+                totalValue: { $sum: "$value" },
+         
+              },
+            },
+          ],
+          as: "transactionStats2",
+
+        }
+      },
+      {
         $skip: (page - 1) * PAGE_SIZE,
       },
       {
@@ -120,15 +184,29 @@ const AdminControllers = {
       },
     ]);
 
-    const total = await UserModel.countDocuments({ roles: userRole?._id });
+    const userTotal = await UserModel.aggregate([
+      {
+        $match: {
+          $and: [searchCriteria, { roles: userRole?._id }],
+        },
+      },
+      { $count: "total" },
+    ]);
+
+    const total = userTotal.length > 0 ? userTotal[0].total : 0;
+
     const usersData = users.map((user) => {
-      const transactionStat = user.transactionStats[0]; // transactionStats là một mảng, chúng ta lấy phần tử đầu tiên
+      const transactionStat = user.transactionStats[0];
+      const transactionStat1 = user.transactionStats1[0];
+      const transactionStat2 = user.transactionStats2[0]; 
       return {
         ...user,
         countTotalBet: transactionStat ? transactionStat.totalBet : 0,
         countTotalWin: transactionStat ? transactionStat.totalWin : 0,
         countTotalLose: transactionStat ? transactionStat.totalLose : 0,
         totalValue: transactionStat ? transactionStat.totalValue : 0,
+        totalDeposit:transactionStat1 ? transactionStat1.totalValue : 0,
+        totalWithdraw:transactionStat2 ? transactionStat2.totalValue : 0
       };
     });
     return new SuccessResponse("ok", {
@@ -138,9 +216,28 @@ const AdminControllers = {
   }),
 
   updateUserInfo: asyncHandler(async (req: ProtectedRequest, res) => {
-    const { userId, password } = req.body;
+    const {
+      userId,
+      password,
+      user_name,
+      name_bank,
+      number_bank,
+      account_name,
+      address,
+    } = req.body;
 
     const user = await UserModel.findByIdAndUpdate(userId);
+    if (!user) return new BadRequestResponse("Không tìm thấy user").send(res);
+
+    user.password = password || user.password;
+    user.user_name = user_name || user.user_name;
+    user.name_bank = name_bank || user.name_bank;
+    user.number_bank = number_bank || user.number_bank;
+    user.account_name = account_name || user.account_name;
+    user.address = address || user.address;
+    await user.save();
+
+    return new SuccessMsgResponse("Cập nhật thông tin thành công").send(res);
   }),
 
   deleteUser: asyncHandler(async (req: ProtectedRequest, res) => {
