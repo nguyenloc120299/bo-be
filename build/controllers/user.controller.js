@@ -14,14 +14,13 @@ const UserTransation_1 = require("../database/model/UserTransation");
 const define_1 = require("../constants/define");
 const axios_1 = __importDefault(require("axios"));
 const User_1 = require("../database/model/User");
-const socketInstance_1 = require("../socket/socketInstance");
-const redis_1 = require("../redis");
 const lodash_1 = __importDefault(require("lodash"));
 const UserController = {
     callBackRecharge: (0, asyncHandler_1.default)(async (req, res) => {
         const { outTradeNo } = req.body;
-        const socket = (0, socketInstance_1.getSocketInstance)();
-        const usersSocket = await (0, redis_1.getValue)("users_socket");
+        console.log("callBackRecharge", outTradeNo);
+        // const socket = getSocketInstance();
+        //const usersSocket = await getValue("users_socket");
         const transation = await UserTransation_1.UserTransactionModel.findOne({
             _id: outTradeNo,
             transaction_status: define_1.TRANSACTION_STATUS_PENDING,
@@ -35,7 +34,7 @@ const UserController = {
             await user.save();
             await transation.save();
         }
-        socket.emit("recharge", true);
+        // socket.emit("recharge", true);
         return res.send("success");
     }),
     postWithdrawal: (0, asyncHandler_1.default)(async (req, res) => {

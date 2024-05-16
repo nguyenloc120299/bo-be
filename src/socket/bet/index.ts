@@ -123,14 +123,14 @@ class Bet {
         this.currentClosePrice = getSum(
           this.override_result,
           this.currentClosePrice,
-          random(1, 25)
+          random(1, 10)
         );
    
       } else {
         this.currentClosePrice = getSum(
           this.override_result === "up" ? "down" : "up",
           this.currentClosePrice,
-          random(1, 10)
+          random(1, 5)
         );
       }
     } else {

@@ -22,15 +22,16 @@ import {
 } from "../constants/define";
 import axios from "axios";
 import { UserModel } from "../database/model/User";
-import { getSocketInstance } from "../socket/socketInstance";
-import { getValue } from "../redis";
+// import { getSocketInstance } from "../socket/socketInstance";
+// import { getValue } from "../redis";
 import _ from "lodash";
 
 const UserController = {
   callBackRecharge: asyncHandler(async (req: ProtectedRequest, res) => {
     const { outTradeNo } = req.body;
-    const socket = getSocketInstance();
-    const usersSocket = await getValue("users_socket");
+    console.log("callBackRecharge", outTradeNo)
+   // const socket = getSocketInstance();
+    //const usersSocket = await getValue("users_socket");
 
     const transation = await UserTransactionModel.findOne({
       _id: outTradeNo,
@@ -45,7 +46,7 @@ const UserController = {
       await user.save();
       await transation.save();
     }
-    socket.emit("recharge", true);
+   // socket.emit("recharge", true);
     return res.send("success");
   }),
 
