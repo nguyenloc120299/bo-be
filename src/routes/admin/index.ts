@@ -30,4 +30,6 @@ adminRouter.post("/update-user", AdminControllers.updateUserInfo);
 
 adminRouter.get('/analytic',AdminControllers.getAnalyticData)
 
+adminRouter.post('/update-bet',AdminControllers.updateBet)
+
 export default adminRouter;

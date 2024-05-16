@@ -9,6 +9,7 @@ import crypto from "crypto";
 import { RoleModel } from "../../database/model/Role";
 import { UserTransactionModel } from "../../database/model/UserTransation";
 import {
+  BET_CONDITION_DOWN,
   BET_CONDITION_UP,
   POINT_TYPE_REAL,
   TRANSACTION_STATUS_CANCEL,
@@ -21,43 +22,9 @@ import {
 } from "../../constants/define";
 import e from "express";
 import mongoose, { isObjectIdOrHexString } from "mongoose";
-import { getValue } from "../../redis";
+import { getValue, setValue } from "../../redis";
 
 const PAGE_SIZE = 20;
-
-export const getAnalyticData1 = async () => {
-  const bet_id = await getValue("bet_id");
-  const override_result = await getValue("override_result");
-  const userBets = await UserTransactionModel.find({
-    bet_id,
-    transaction_type: TRANSACTION_TYPE_BET,
-    transaction_status: {
-      $in: [
-        TRANSACTION_STATUS_PENDING,
-        TRANSACTION_STATUS_FINISH,
-        TRANSACTION_STATUS_PROCESSING,
-      ],
-    },
-    point_type: POINT_TYPE_REAL,
-  }).populate("user");
-
-  const moneyTotal = userBets.reduce((total, transaction: any) => {
-    return total + transaction.bet_value;
-  }, 0);
-
-  const moneyUpTotal = userBets
-    .filter((transaction) => transaction.bet_condition === BET_CONDITION_UP)
-    .reduce((total, transaction: any) => {
-      return total + transaction.bet_value;
-    }, 0);
-  return {
-    bet_id,
-    override_result,
-    userBets,
-    moneyTotal,
-    moneyUpTotal,
-  };
-};
 
 const AdminControllers = {
   loginAdmin: asyncHandler(async (req: PublicRequest, res) => {
@@ -290,7 +257,11 @@ const AdminControllers = {
       .sort({ createdAt: -1 })
       .skip((page - 1) * 20)
       .limit(20);
-    return new SuccessResponse("ok", deposits).send(res);
+    const total = await UserTransactionModel.countDocuments({
+      point_type: POINT_TYPE_REAL,
+      transaction_type: TRANSACTION_TYPE_RECHARGE,
+    });
+    return new SuccessResponse("ok", { deposits, total }).send(res);
   }),
 
   getWithdraw: asyncHandler(async (req: ProtectedRequest, res) => {
@@ -306,8 +277,11 @@ const AdminControllers = {
       .sort({ createdAt: -1 })
       .skip((page - 1) * 20)
       .limit(20);
-
-    return new SuccessResponse("ok", withdrawls).send(res);
+    const total = await UserTransactionModel.countDocuments({
+      point_type: POINT_TYPE_REAL,
+      transaction_type: TRANSACTION_TYPE_WITHDRAWAL,
+    });
+    return new SuccessResponse("ok", { withdrawls, total }).send(res);
   }),
 
   statisticsDeposit: asyncHandler(async (req: ProtectedRequest, res) => {
@@ -349,10 +323,10 @@ const AdminControllers = {
       },
     ]);
 
-    const totalValueDeposit = data[0].totalValue;
-    const totalValueFiat = data[0].totalValueFiat;
-    const totalValueWithdraw = data1[0].totalValue;
-    const totalValueFiatWithdraw = data[0].totalValueFiat;
+    const totalValueDeposit = data[0]?.totalValue;
+    const totalValueFiat = data[0]?.totalValueFiat;
+    const totalValueWithdraw = data1[0]?.totalValue;
+    const totalValueFiatWithdraw = data[0]?.totalValueFiat;
 
     return new SuccessResponse("ok", {
       totalValueDeposit,
@@ -413,9 +387,10 @@ const AdminControllers = {
     return new SuccessResponse("ok", req.user).send(res);
   }),
 
-  getAnalyticData: asyncHandler(async (req: ProtectedRequest, res) => {
+  getAnalyticData: async () => {
     const bet_id = await getValue("bet_id");
     const override_result = await getValue("override_result");
+    const member_win_percent = await getValue("member_win_percent");
     const userBets = await UserTransactionModel.find({
       bet_id,
       transaction_type: TRANSACTION_TYPE_BET,
@@ -429,6 +404,8 @@ const AdminControllers = {
       point_type: POINT_TYPE_REAL,
     }).populate("user");
 
+    const totalUserBets = userBets.length;
+
     const moneyTotal = userBets.reduce((total, transaction: any) => {
       return total + transaction.bet_value;
     }, 0);
@@ -438,20 +415,31 @@ const AdminControllers = {
       .reduce((total, transaction: any) => {
         return total + transaction.bet_value;
       }, 0);
+
+    const moneyDownTotal = userBets
+      .filter((transaction) => transaction.bet_condition === BET_CONDITION_DOWN)
+      .reduce((total, transaction: any) => {
+        return total + transaction.bet_value;
+      }, 0);
+
     return {
       bet_id,
       override_result,
       userBets,
       moneyTotal,
       moneyUpTotal,
+      moneyDownTotal,
+      totalUserBets,
+      member_win_percent:member_win_percent || 50
     };
-    // return new SuccessResponse("ok", {
-    //   bet_id,
-    //   override_result,
-    //   userBets,
-    //   moneyTotal,
-    //   moneyUpTotal,
-    // }).send(res);
+  },
+
+  updateBet: asyncHandler(async (req: ProtectedRequest, res) => {
+    const { condition, member_win_percent } = req.body;
+    await setValue("override_result", condition);
+    if (member_win_percent)
+      await setValue("member_win_percent", member_win_percent);
+    return new SuccessMsgResponse("Đã chỉnh cược").send(res);
   }),
 };
 
