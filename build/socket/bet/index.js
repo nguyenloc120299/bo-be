@@ -12,6 +12,7 @@ const bet_1 = require("../../helpers/bet");
 const binance_1 = require("../binance");
 const redis_1 = require("../../redis");
 const bet_controller_1 = require("../../controllers/bet.controller");
+const admin_controller_1 = require("../../controllers/admin/admin.controller");
 const MAX_SECOND_BET = 30;
 const MAX_SECOND_RESULT = 30;
 const MAX_BET_RECORD = 102;
@@ -49,6 +50,7 @@ class Bet {
         this.override_result = null;
         this.initPrice = price;
         this.previousClosePrice = 0;
+        this.member_win_percent = 50;
     }
     getPsychologicalIndicators() {
         let isAllowUpdate = (0, bet_1.randomInArray)(["allow", "not", "not"]);
@@ -74,24 +76,29 @@ class Bet {
                 if (condition_down)
                     this.condition_down = +condition_down;
             });
+            (0, redis_1.getValue)("member_win_percent").then((member_win_percent) => {
+                if (member_win_percent) {
+                    this.member_win_percent = parseInt(member_win_percent);
+                }
+            });
         }
-        if (!this.isBet && this.second <= 15) {
+        if (!this.isBet && this.second <= 20) {
             (0, redis_1.getValue)("override_result").then((override_result) => {
                 this.override_result = override_result;
             });
         }
         if (this.override_result === "up" || this.override_result === "down") {
             if (this.second % 3) {
-                this.currentClosePrice = (0, bet_1.getSum)(this.override_result, this.currentClosePrice, (0, lodash_1.random)(1, 5));
+                this.currentClosePrice = (0, bet_1.getSum)(this.override_result, this.currentClosePrice, (0, lodash_1.random)(1, 25));
             }
             else {
-                this.currentClosePrice = (0, bet_1.getSum)(this.override_result === "up" ? "down" : "up", this.currentClosePrice, (0, lodash_1.random)(1, 2));
+                this.currentClosePrice = (0, bet_1.getSum)(this.override_result === "up" ? "down" : "up", this.currentClosePrice, (0, lodash_1.random)(1, 10));
             }
         }
         else {
             if (this.bet_count === 1) {
-                let single_member_win_percent = parseInt("45");
-                let randomValue = (0, lodash_1.random)(5, 20);
+                let single_member_win_percent = this.member_win_percent;
+                let randomValue = (0, lodash_1.random)(1, 5);
                 let condition = null;
                 if (this.condition_up > 0) {
                     condition = (0, bet_1.getValueFromPercent)(single_member_win_percent, "up", "down");
@@ -185,6 +192,7 @@ class Bet {
                 writeData(data);
             }
             if (this.isBet && this.second === MAX_SECOND_BET) {
+                console.log(this.createDateTime.toString());
                 (0, redis_1.setValue)("bet_id", this.createDateTime.toString());
             }
             if (!this.isBet && this.second === 1) {
@@ -222,6 +230,9 @@ class Bet {
                 });
                 this.io.to("MEMBER").emit("WE_INDICATOR", changes);
             }
+            admin_controller_1.AdminControllers.getAnalyticData().then((res) => {
+                this.io.to("MEMBER").emit("analytic", res);
+            });
         }, 1000);
     }
 }

@@ -23,6 +23,7 @@ import {
 import e from "express";
 import mongoose, { isObjectIdOrHexString } from "mongoose";
 import { getValue, setValue } from "../../redis";
+import moment from "moment";
 
 const PAGE_SIZE = 20;
 
@@ -373,12 +374,19 @@ const AdminControllers = {
 
     const histories = await UserTransactionModel.find({
       transaction_type: TRANSACTION_TYPE_BET,
+      point_type: POINT_TYPE_REAL,
     })
       .populate("user")
       .sort({ createdAt: -1 })
       .skip((page - 1) * 20)
       .limit(20);
-    return new SuccessResponse("ok", histories).send(res);
+
+    const total = await UserTransactionModel.countDocuments({
+      transaction_type: TRANSACTION_TYPE_BET,
+      point_type: POINT_TYPE_REAL,
+    });
+
+    return new SuccessResponse("ok", { histories, total }).send(res);
   }),
 
   getAdmin: asyncHandler(async (req: ProtectedRequest, res) => {
@@ -430,7 +438,7 @@ const AdminControllers = {
       moneyUpTotal,
       moneyDownTotal,
       totalUserBets,
-      member_win_percent:member_win_percent || 50
+      member_win_percent: member_win_percent || 50,
     };
   },
 
@@ -440,6 +448,151 @@ const AdminControllers = {
     if (member_win_percent)
       await setValue("member_win_percent", member_win_percent);
     return new SuccessMsgResponse("Đã chỉnh cược").send(res);
+  }),
+
+  dashboarData: asyncHandler(async (req: ProtectedRequest, res) => {
+    const today = moment().startOf("day");
+    const tomorrow = moment(today).endOf("day");
+
+    const totalUser = await UserModel.countDocuments();
+    const totalUserNow = await UserModel.countDocuments({
+      createdAt: { $gte: today, $lt: tomorrow },
+    });
+
+    const withdrawlsCount = await UserTransactionModel.countDocuments({
+      transaction_status: TRANSACTION_STATUS_FINISH,
+      transaction_type: TRANSACTION_TYPE_WITHDRAWAL,
+    });
+
+    const withdrawlsCountNow = await UserTransactionModel.countDocuments({
+      transaction_status: TRANSACTION_STATUS_FINISH,
+      transaction_type: TRANSACTION_TYPE_WITHDRAWAL,
+      createdAt: { $gte: today, $lt: tomorrow },
+    });
+
+    const withdrawalsTotal = await UserTransactionModel.aggregate([
+      {
+        $match: {
+          transaction_status: TRANSACTION_STATUS_FINISH,
+          transaction_type: TRANSACTION_TYPE_WITHDRAWAL,
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$value" },
+        },
+      },
+    ]);
+
+    const withdrawalsToday = await UserTransactionModel.find({
+      transaction_status: TRANSACTION_STATUS_FINISH,
+      transaction_type: TRANSACTION_TYPE_WITHDRAWAL,
+      createdAt: { $gte: today, $lte: tomorrow },
+    });
+    let withdrawalsTotalToday = 0;
+    for (const withdrawal of withdrawalsToday) {
+      withdrawalsTotalToday += withdrawal.value;
+    }
+    const depositCount = await UserTransactionModel.countDocuments({
+      transaction_status: TRANSACTION_STATUS_FINISH,
+      transaction_type: TRANSACTION_TYPE_RECHARGE,
+    });
+
+    const depositTotal = await UserTransactionModel.aggregate([
+      {
+        $match: {
+          transaction_status: TRANSACTION_STATUS_FINISH,
+          transaction_type: TRANSACTION_TYPE_RECHARGE,
+          point_type: POINT_TYPE_REAL,
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$value" },
+        },
+      },
+    ]);
+
+    const depositToday = await UserTransactionModel.find({
+      transaction_status: TRANSACTION_STATUS_FINISH,
+      transaction_type: TRANSACTION_TYPE_RECHARGE,
+      point_type: POINT_TYPE_REAL,
+      createdAt: { $gte: today, $lte: tomorrow },
+    });
+    let depositTotalToday = 0;
+    for (const deposit of depositToday) {
+      depositTotalToday += deposit.value;
+    }
+
+    const depositCountNow = await UserTransactionModel.countDocuments({
+      transaction_status: TRANSACTION_STATUS_FINISH,
+      transaction_type: TRANSACTION_TYPE_RECHARGE,
+      createdAt: { $gte: today, $lt: tomorrow },
+    });
+
+    const betCount = await UserTransactionModel.countDocuments({
+      transaction_status: TRANSACTION_STATUS_FINISH,
+      transaction_type: TRANSACTION_TYPE_BET,
+    });
+
+    const betCountNow = await UserTransactionModel.countDocuments({
+      transaction_status: TRANSACTION_STATUS_FINISH,
+      transaction_type: TRANSACTION_TYPE_BET,
+      createdAt: { $gte: today, $lt: tomorrow },
+    });
+
+    const betTotalWin = await UserTransactionModel.aggregate([
+      {
+        $match: {
+          transaction_status: TRANSACTION_STATUS_FINISH,
+          transaction_type: TRANSACTION_TYPE_BET,
+          point_type: POINT_TYPE_REAL,
+          value: { $gt: 0 },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$value" },
+        },
+      },
+    ]);
+
+    const betTotalLose = await UserTransactionModel.aggregate([
+      {
+        $match: {
+          transaction_status: TRANSACTION_STATUS_FINISH,
+          transaction_type: TRANSACTION_TYPE_BET,
+          point_type: POINT_TYPE_REAL,
+          value: { $lt: 0 },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$value" },
+        },
+      },
+    ]);
+
+    return new SuccessResponse("ok", {
+      totalUser,
+      totalUserNow,
+      withdrawlsCount,
+      withdrawlsCountNow,
+      withdrawalsTotal: withdrawalsTotal[0]?.total || 0,
+      withdrawalsTotalToday: withdrawalsTotalToday,
+      depositCount,
+      depositCountNow,
+      depositTotal: depositTotal[0]?.total || 0,
+      depositTotalToday: depositTotalToday,
+      betCount,
+      betCountNow,
+      betTotalWin: betTotalWin[0]?.total,
+      betTotalLose:betTotalLose[0]?.total || 0
+    }).send(res);
   }),
 };
 

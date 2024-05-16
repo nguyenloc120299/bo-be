@@ -8,6 +8,7 @@ const SocketServer = (socket) => {
             socketId: socket.id,
             user: user === null || user === void 0 ? void 0 : user._id,
         });
+        socket.join('ADMIN');
         socket.join("MEMBER");
     });
     socket.on('recharge', (user) => {
@@ -18,6 +19,7 @@ const SocketServer = (socket) => {
         if (index !== -1) {
             users.splice(index, 1);
         }
+        socket.leave('ADMIN');
     });
 };
 exports.SocketServer = SocketServer;

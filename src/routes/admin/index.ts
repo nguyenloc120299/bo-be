@@ -32,4 +32,6 @@ adminRouter.get('/analytic',AdminControllers.getAnalyticData)
 
 adminRouter.post('/update-bet',AdminControllers.updateBet)
 
+adminRouter.get('/dashboard',AdminControllers.dashboarData)
+
 export default adminRouter;
