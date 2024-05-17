@@ -20,7 +20,7 @@ const betController = {
   postBet: asyncHandler(async (req: ProtectedRequest, res) => {
     const { bet_value, bet_condition } = req.body;
 
-    if(!req.user.is_lock_transfer) return new BadRequestResponse('Tài khoản của bạn đã bị khóa giao dịch. Vui lòng liên hệ CSKH để biết thêm chi tiết').send(res)
+    if(req.user.is_lock_transfer) return new BadRequestResponse('Tài khoản của bạn đã bị khóa giao dịch. Vui lòng liên hệ CSKH để biết thêm chi tiết').send(res)
       
     const isBet = await getValue("is_bet");
     const bet_id = await getValue("bet_id");
