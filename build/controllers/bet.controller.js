@@ -14,7 +14,7 @@ const betController = {
     postBet: (0, asyncHandler_1.default)(async (req, res) => {
         var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
         const { bet_value, bet_condition } = req.body;
-        if (!req.user.is_lock_transfer)
+        if (req.user.is_lock_transfer)
             return new ApiResponse_1.BadRequestResponse('Tài khoản của bạn đã bị khóa giao dịch. Vui lòng liên hệ CSKH để biết thêm chi tiết').send(res);
         const isBet = await (0, redis_1.getValue)("is_bet");
         const bet_id = await (0, redis_1.getValue)("bet_id");

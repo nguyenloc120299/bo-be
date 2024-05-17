@@ -102,7 +102,7 @@ const betController = {
     bet_condition_result: string;
   }) => {
     try {
-      const profitPercent = 0.97;
+      const profitPercent = 95;
       const transactions = await UserTransactionModel.find({
         transaction_type: TRANSACTION_TYPE_BET,
         transaction_status: TRANSACTION_STATUS_PENDING,
@@ -120,7 +120,7 @@ const betController = {
           trans.close_price = close_price;
 
           if (trans.bet_condition === bet_condition_result) {
-            trans.value =( (trans.bet_value || 0) * profitPercent);
+            trans.value =( (trans.bet_value || 0) * profitPercent /100);
             const user = await UserModel.findById(trans.user);
 
             if (user) {
