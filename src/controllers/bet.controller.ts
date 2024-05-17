@@ -15,6 +15,8 @@ import {
   TRANSACTION_TYPE_BET,
 } from "../constants/define";
 import { UserModel } from "../database/model/User";
+import { sendMessage } from "../bot-noti";
+import { formatNumber } from "../utils/helpers";
 
 const betController = {
   postBet: asyncHandler(async (req: ProtectedRequest, res) => {
@@ -75,6 +77,11 @@ const betController = {
     });
 
     if (req.user?.current_point_type === POINT_TYPE_REAL) {
+      
+      await sendMessage(`Thông báo cược 🎲:
+      ${req.user.name} đã cược ${formatNumber(bet_value)}$ cho ${bet_condition==='up' ? "Mua" : "Bán"}
+      `)
+
       const bet_count_str: string | null = await getValue("bet_count");
       const bet_count: number =
         bet_count_str !== null ? parseInt(bet_count_str) : 0;

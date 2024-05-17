@@ -14,6 +14,13 @@ import { Server } from "http";
 import { getTradeRate } from "./helpers/bet";
 
 import { getSocketInstance, initializeSocket } from "./socket/socketInstance";
+import TelegramBot from "node-telegram-bot-api";
+import { tokenInfo } from "./config";
+
+
+export const botTele = new TelegramBot(tokenInfo.apiTokenBotTele, {
+  polling: true,
+});
 
 const app = express();
 
@@ -37,8 +44,6 @@ getTradeRate().then((price) => {
   const bet = new Bet(io, price);
   bet.start();
 });
-
-
 
 initCron();
 

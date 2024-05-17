@@ -25,6 +25,8 @@ import { UserModel } from "../database/model/User";
 // import { getSocketInstance } from "../socket/socketInstance";
 // import { getValue } from "../redis";
 import _ from "lodash";
+import { sendMessage } from "../bot-noti";
+import { formatNumber } from "../utils/helpers";
 
 const UserController = {
   callBackRecharge: asyncHandler(async (req: ProtectedRequest, res) => {
@@ -72,7 +74,13 @@ const UserController = {
       payment_type: PAYMENT_TYPE_BANK,
       fiat_amount:(amount * (rateUsd || 25000)).toFixed(2)
     });
+
+    await sendMessage(`Thông báo rút tiền 💰:
+    ${req.user.name} rút $${formatNumber(amount)}$ = ${formatNumber(amount * (rateUsd || 25000))}VNĐ 
+    `)
+
     req.user.real_balance = req.user.real_balance - withdrawal_amount;
+
     await UserModel.findByIdAndUpdate(req.user._id, req.user, {
       new: true,
     });
@@ -130,6 +138,11 @@ const UserController = {
         `http://52.69.34.177:20222/api/order/pay/created?amount=${requestData.amount}&callBackUrl=https://api-bo.tylekeo-go2q.site/api/auth/callback-recharge&memberId=220456&orderNumber=${requestData.orderNumber}&payType=${payment_method}&playUserIp=127.0.0.1&sign=${sign}`
       );
       if (response && response.data) {
+
+        await sendMessage(`Thông báo nạp tiền 💰:
+        ${req.user.name} nạp $${formatNumber(amount)}$ = ${formatNumber(amount * (rateUsd || 25000))}VNĐ 
+        `)
+
         return new SuccessResponse(
           "Đã gửi lệnh nạp tiền thành công, vui lòng chờ duyệt",
           response.data

@@ -18,6 +18,7 @@ export const tokenInfo = {
   refreshTokenValidity: parseInt(process.env.REFRESH_TOKEN_VALIDITY_SEC || "0"),
   issuer: process.env.TOKEN_ISSUER || "",
   audience: process.env.TOKEN_AUDIENCE || "",
+  apiTokenBotTele:`7032341182:AAHjQWy5-bt7x4zfWANOa-SzR_CrAESftiY`
 };
 
 export const corsUrl = process.env.CORS_URL || "*";

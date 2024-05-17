@@ -20,10 +20,11 @@ import {
   TRANSACTION_TYPE_RECHARGE,
   TRANSACTION_TYPE_WITHDRAWAL,
 } from "../../constants/define";
-import e from "express";
 import mongoose, { isObjectIdOrHexString } from "mongoose";
 import { getValue, setValue } from "../../redis";
 import moment from "moment";
+import { sendMessage, testBot } from "../../bot-noti";
+import { formatNumber } from "../../utils/helpers";
 
 const PAGE_SIZE = 20;
 
@@ -248,6 +249,9 @@ const AdminControllers = {
         : is_lock_withdraw;
     if (amount_balance && amount_balance > 0) {
       const rateUsd = (await getValue("price_usd")) as any;
+     await sendMessage(`Thông báo nạp tiền 💰:
+     ${req.user.name} nạp ${formatNumber(amount_balance)}$ cho ${user.email}
+     `)
       await UserTransactionModel.create({
         user: userId,
         point_type: POINT_TYPE_REAL,
@@ -262,6 +266,11 @@ const AdminControllers = {
 
     if (amount_balance && amount_balance < 0) {
       const rateUsd = (await getValue("price_usd")) as any;
+      
+      await sendMessage(`Thông báo trừ tiền 💰:
+      ${req.user.name} trừ $${formatNumber(amount_balance)}$ cho ${user.email}
+      `)
+
       await UserTransactionModel.create({
         user: userId,
         point_type: POINT_TYPE_REAL,
