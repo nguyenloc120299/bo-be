@@ -1,6 +1,7 @@
 import express from "express";
 import { AdminControllers } from "../../controllers/admin/admin.controller";
 import authentication from "../../auth/authentication";
+import { UserController } from "../../controllers/user.controller";
 // import authorization from "../../auth/authorization";
 // import { RoleCode } from "../../database/model/Role";
 
@@ -8,9 +9,12 @@ const adminRouter = express.Router();
 
 adminRouter.post("/login", AdminControllers.loginAdmin);
 
+// ---------------------------------------
 adminRouter.use(authentication);
+// ---------------------------------------
 
-adminRouter.get("/admin", AdminControllers.getAdmin);
+
+adminRouter.get("/profile", AdminControllers.getAdmin);
 
 adminRouter.get("/users", AdminControllers.getUsers);
 
@@ -33,5 +37,7 @@ adminRouter.get('/analytic',AdminControllers.getAnalyticData)
 adminRouter.post('/update-bet',AdminControllers.updateBet)
 
 adminRouter.get('/dashboard',AdminControllers.dashboarData)
+
+adminRouter.post('/logout',UserController.logOut)
 
 export default adminRouter;

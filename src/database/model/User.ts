@@ -62,8 +62,17 @@ const schema = new Schema(
     phone: {
       type: Schema.Types.String,
     },
+    is_kyc:{
+      type: Schema.Types.String,
+      default:"no_kyc" 
+    },
     is_lock_transfer: {
       type: Schema.Types.Boolean,
+      default:false
+    },
+    is_lock_withdraw: {
+      type: Schema.Types.Boolean,
+      default:false
     },
     two_fa: {
       type: Schema.Types.String,

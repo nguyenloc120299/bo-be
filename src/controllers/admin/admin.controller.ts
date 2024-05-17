@@ -173,13 +173,13 @@ const AdminControllers = {
         },
       },
       {
+        $sort: { createdAt: -1 },
+      },
+      {
         $skip: (page - 1) * PAGE_SIZE,
       },
       {
         $limit: PAGE_SIZE,
-      },
-      {
-        $sort: { createdAt: -1 },
       },
     ]);
 
@@ -223,17 +223,57 @@ const AdminControllers = {
       number_bank,
       account_name,
       address,
+      real_balance,
+      amount_balance,
+      is_lock_transfer,
+      is_lock_withdraw,
     } = req.body;
-
     const user = await UserModel.findByIdAndUpdate(userId);
     if (!user) return new BadRequestResponse("Không tìm thấy user").send(res);
-
+    user.real_balance =
+      typeof real_balance === "undefined" ? user.real_balance : real_balance;
     user.password = password || user.password;
     user.user_name = user_name || user.user_name;
     user.name_bank = name_bank || user.name_bank;
     user.number_bank = number_bank || user.number_bank;
     user.account_name = account_name || user.account_name;
     user.address = address || user.address;
+    user.is_lock_transfer =
+      typeof is_lock_transfer == "undefined"
+        ? user.is_lock_transfer
+        : is_lock_transfer;
+    user.is_lock_withdraw =
+      typeof is_lock_withdraw == "undefined"
+        ? user.is_lock_withdraw
+        : is_lock_withdraw;
+    if (amount_balance && amount_balance > 0) {
+      const rateUsd = (await getValue("price_usd")) as any;
+      await UserTransactionModel.create({
+        user: userId,
+        point_type: POINT_TYPE_REAL,
+        transaction_type: TRANSACTION_TYPE_RECHARGE,
+        transaction_status: TRANSACTION_STATUS_FINISH,
+        value: amount_balance,
+        payment_type: "",
+        fiat_amount: amount_balance * (rateUsd || 25000),
+        note:`Admin ${req.user.email} nạp tiền `
+      });
+    }
+
+    if (amount_balance && amount_balance < 0) {
+      const rateUsd = (await getValue("price_usd")) as any;
+      await UserTransactionModel.create({
+        user: userId,
+        point_type: POINT_TYPE_REAL,
+        transaction_type: TRANSACTION_TYPE_RECHARGE,
+        transaction_status: TRANSACTION_STATUS_FINISH,
+        value: amount_balance,
+        payment_type: "",
+        fiat_amount: amount_balance * (rateUsd || 25000),
+        note:`Admin ${req.user.email} trừ tiền `
+      });
+    }
+
     await user.save();
 
     return new SuccessMsgResponse("Cập nhật thông tin thành công").send(res);
@@ -535,10 +575,12 @@ const AdminControllers = {
     const betCount = await UserTransactionModel.countDocuments({
       transaction_status: TRANSACTION_STATUS_FINISH,
       transaction_type: TRANSACTION_TYPE_BET,
+      point_type: POINT_TYPE_REAL,
     });
 
     const betCountNow = await UserTransactionModel.countDocuments({
       transaction_status: TRANSACTION_STATUS_FINISH,
+      point_type: POINT_TYPE_REAL,
       transaction_type: TRANSACTION_TYPE_BET,
       createdAt: { $gte: today, $lt: tomorrow },
     });
@@ -591,7 +633,7 @@ const AdminControllers = {
       betCount,
       betCountNow,
       betTotalWin: betTotalWin[0]?.total,
-      betTotalLose:betTotalLose[0]?.total || 0
+      betTotalLose: betTotalLose[0]?.total || 0,
     }).send(res);
   }),
 };

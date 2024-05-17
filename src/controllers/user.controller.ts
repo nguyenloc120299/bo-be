@@ -52,6 +52,7 @@ const UserController = {
 
   postWithdrawal: asyncHandler(async (req: ProtectedRequest, res) => {
     const { amount,rateUsd } = req.body;
+    if(req.user?.is_lock_withdraw) return new BadRequestResponse('Tài khoản bạn đã khóa rút tiền. Vui lòng liên hệ CSKH để biết thêm chi tiết').send(res)
     const withdrawal_amount = parseFloat(amount);
     const minimum_withdrawal = 5;
     if (withdrawal_amount > req.user.real_balance)

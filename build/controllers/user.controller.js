@@ -14,6 +14,8 @@ const UserTransation_1 = require("../database/model/UserTransation");
 const define_1 = require("../constants/define");
 const axios_1 = __importDefault(require("axios"));
 const User_1 = require("../database/model/User");
+// import { getSocketInstance } from "../socket/socketInstance";
+// import { getValue } from "../redis";
 const lodash_1 = __importDefault(require("lodash"));
 const UserController = {
     callBackRecharge: (0, asyncHandler_1.default)(async (req, res) => {
@@ -38,7 +40,10 @@ const UserController = {
         return res.send("success");
     }),
     postWithdrawal: (0, asyncHandler_1.default)(async (req, res) => {
+        var _a;
         const { amount, rateUsd } = req.body;
+        if ((_a = req.user) === null || _a === void 0 ? void 0 : _a.is_lock_withdraw)
+            return new ApiResponse_1.BadRequestResponse('Tài khoản bạn đã khóa rút tiền. Vui lòng liên hệ CSKH để biết thêm chi tiết').send(res);
         const withdrawal_amount = parseFloat(amount);
         const minimum_withdrawal = 5;
         if (withdrawal_amount > req.user.real_balance)

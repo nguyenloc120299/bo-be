@@ -14,6 +14,8 @@ const betController = {
     postBet: (0, asyncHandler_1.default)(async (req, res) => {
         var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
         const { bet_value, bet_condition } = req.body;
+        if (!req.user.is_lock_transfer)
+            return new ApiResponse_1.BadRequestResponse('Tài khoản của bạn đã bị khóa giao dịch. Vui lòng liên hệ CSKH để biết thêm chi tiết').send(res);
         const isBet = await (0, redis_1.getValue)("is_bet");
         const bet_id = await (0, redis_1.getValue)("bet_id");
         console.log("Đã cược bet_id:", bet_id);
@@ -30,11 +32,11 @@ const betController = {
         if (((_c = req.user) === null || _c === void 0 ? void 0 : _c.current_point_type) == "real")
             await User_1.UserModel.updateOne({
                 _id: (_d = req.user) === null || _d === void 0 ? void 0 : _d._id,
-            }, { $set: { real_balance: ((_e = req.user) === null || _e === void 0 ? void 0 : _e.real_balance) - bet_value } });
+            }, { $set: { real_balance: parseFloat((_e = req.user) === null || _e === void 0 ? void 0 : _e.real_balance) - parseFloat(bet_value) } });
         if (((_f = req.user) === null || _f === void 0 ? void 0 : _f.current_point_type) == "demo")
             await User_1.UserModel.updateOne({
                 _id: (_g = req.user) === null || _g === void 0 ? void 0 : _g._id,
-            }, { $set: { demo_balance: ((_h = req.user) === null || _h === void 0 ? void 0 : _h.demo_balance) - bet_value } });
+            }, { $set: { demo_balance: parseFloat((_h = req.user) === null || _h === void 0 ? void 0 : _h.demo_balance) - parseFloat(bet_value) } });
         await UserTransation_1.UserTransactionModel.create({
             point_type: (_j = req.user) === null || _j === void 0 ? void 0 : _j.current_point_type,
             transaction_type: define_1.TRANSACTION_TYPE_BET,

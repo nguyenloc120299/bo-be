@@ -89,10 +89,10 @@ class Bet {
         }
         if (this.override_result === "up" || this.override_result === "down") {
             if (this.second % 3) {
-                this.currentClosePrice = (0, bet_1.getSum)(this.override_result, this.currentClosePrice, (0, lodash_1.random)(1, 25));
+                this.currentClosePrice = (0, bet_1.getSum)(this.override_result, this.currentClosePrice, (0, lodash_1.random)(1, 10));
             }
             else {
-                this.currentClosePrice = (0, bet_1.getSum)(this.override_result === "up" ? "down" : "up", this.currentClosePrice, (0, lodash_1.random)(1, 10));
+                this.currentClosePrice = (0, bet_1.getSum)(this.override_result === "up" ? "down" : "up", this.currentClosePrice, (0, lodash_1.random)(1, 5));
             }
         }
         else {
