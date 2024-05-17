@@ -1,6 +1,6 @@
 import { botTele } from "../app";
 
-export const ID_CHAT = `-4264296286`;
+export const ID_CHAT = `-2142948240`;
 
 
 

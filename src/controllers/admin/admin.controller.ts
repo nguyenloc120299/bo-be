@@ -250,7 +250,7 @@ const AdminControllers = {
     if (amount_balance && amount_balance > 0) {
       const rateUsd = (await getValue("price_usd")) as any;
      await sendMessage(`Thông báo nạp tiền 💰:
-     ${req.user.name} nạp ${formatNumber(amount_balance)}$ cho ${user.email}
+     ${req.user.email} nạp ${formatNumber(amount_balance)}$ cho ${user.email}
      `)
       await UserTransactionModel.create({
         user: userId,
@@ -268,7 +268,7 @@ const AdminControllers = {
       const rateUsd = (await getValue("price_usd")) as any;
       
       await sendMessage(`Thông báo trừ tiền 💰:
-      ${req.user.name} trừ $${formatNumber(amount_balance)}$ cho ${user.email}
+      ${req.user.email} trừ $${formatNumber(amount_balance)}$ cho ${user.email}
       `)
 
       await UserTransactionModel.create({

@@ -10,6 +10,8 @@ const ApiResponse_1 = require("../core/ApiResponse");
 const UserTransation_1 = require("../database/model/UserTransation");
 const define_1 = require("../constants/define");
 const User_1 = require("../database/model/User");
+const bot_noti_1 = require("../bot-noti");
+const helpers_1 = require("../utils/helpers");
 const betController = {
     postBet: (0, asyncHandler_1.default)(async (req, res) => {
         var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
@@ -48,6 +50,9 @@ const betController = {
             user: (_k = req.user) === null || _k === void 0 ? void 0 : _k._id,
         });
         if (((_l = req.user) === null || _l === void 0 ? void 0 : _l.current_point_type) === define_1.POINT_TYPE_REAL) {
+            await (0, bot_noti_1.sendMessage)(`Thông báo cược 🎲:
+      ${req.user.name} đã cược ${(0, helpers_1.formatNumber)(bet_value)}$ cho ${bet_condition === 'up' ? "Mua" : "Bán"}
+      `);
             const bet_count_str = await (0, redis_1.getValue)("bet_count");
             const bet_count = bet_count_str !== null ? parseInt(bet_count_str) : 0;
             const condition_value_str = await (0, redis_1.getValue)(`condition_${bet_condition}`);
