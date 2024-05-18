@@ -13,6 +13,7 @@ const schema = new Schema(
     value: { type: Schema.Types.Number, required: true },
     bet_condition: { type: Schema.Types.String },
     bet_value: { type: Schema.Types.Number },
+    fiat_amount: { type: Schema.Types.Number },
     bet_id: { type: Schema.Types.String },
     note: { type: Schema.Types.String },
     open_price: { type: Schema.Types.Number },

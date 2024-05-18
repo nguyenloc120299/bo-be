@@ -15,11 +15,41 @@ const KeystoreRepo_1 = __importDefault(require("../database/repository/KeystoreR
 const authUtils_1 = require("../auth/authUtils");
 const Role_1 = require("../database/model/Role");
 const jwt_decode_1 = require("jwt-decode");
+<<<<<<< HEAD
 const client = new google_auth_library_1.OAuth2Client(`782297257397-t9ntj9ikius66fp40evqtb95m1ecb0dt.apps.googleusercontent.com`);
+=======
+const mail_1 = require("../helpers/mail");
+const lodash_1 = __importDefault(require("lodash"));
+const redis_1 = require("../redis");
+>>>>>>> c3630eaac1e1ecdf6b1975c05919bd8f702fdfeb
 const validateEmail = (email) => {
     return String(email)
         .toLowerCase()
         .match(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/);
+};
+function generateOTP(limit) {
+    var digits = "0123456789";
+    let OTP = "";
+    for (let i = 0; i < limit; i++) {
+        OTP += digits[Math.floor(Math.random() * 10)];
+    }
+    return OTP;
+}
+const sendOTP = async (user) => {
+    let dataOtps = (await (0, redis_1.getValue)("otps"));
+    dataOtps = dataOtps ? JSON.parse(dataOtps) : [];
+    let otpGenerate = generateOTP(5);
+    while (dataOtps.some((otpData) => otpData.user === user && otpData.otp === otpGenerate)) {
+        otpGenerate = generateOTP(5);
+    }
+    dataOtps.push({
+        user: user,
+        otp: otpGenerate,
+        time: new Date().getTime() + 1000 * 60 * 3,
+    });
+    await (0, redis_1.setValue)("otps", JSON.stringify(dataOtps), 3);
+    await (0, mail_1.sendMailOTP)(user, "Xác nhận tài khoản", otpGenerate);
+    return otpGenerate;
 };
 const AuthController = {
     googleLogin: (0, asyncHandler_1.default)(async (req, res) => {
@@ -32,8 +62,14 @@ const AuthController = {
         if (user) {
             await KeystoreRepo_1.default.create(user, accessTokenKey, refreshTokenKey);
             const tokens = await (0, authUtils_1.createTokens)(user, accessTokenKey, refreshTokenKey);
+<<<<<<< HEAD
             return new ApiResponse_1.SuccessResponse("Đăng nhập thành công", {
                 user: user,
+=======
+            const userData = lodash_1.default.omit(user, ["otp", "password"]);
+            return new ApiResponse_1.SuccessResponse("Đăng nhập thành công", {
+                user: userData,
+>>>>>>> c3630eaac1e1ecdf6b1975c05919bd8f702fdfeb
                 tokens,
             }).send(res);
         }
@@ -51,6 +87,10 @@ const AuthController = {
                 password: password,
                 user_name: credentialRes.name,
                 roles: [role],
+<<<<<<< HEAD
+=======
+                verified: true,
+>>>>>>> c3630eaac1e1ecdf6b1975c05919bd8f702fdfeb
             });
             const keystore = await KeystoreRepo_1.default.create(new_user, accessTokenKey, refreshTokenKey);
             const tokens = await (0, authUtils_1.createTokens)(new_user, keystore.primaryKey, keystore.secondaryKey);
@@ -62,7 +102,12 @@ const AuthController = {
                 value: 1000,
                 note: "Nạp demo khi đăng kí thành công",
             });
+<<<<<<< HEAD
             return new ApiResponse_1.SuccessResponse("Đã tạo tài khoản thành công. Xin vui lòng đăng nhập", { user: new_user, tokens }).send(res);
+=======
+            const userData = lodash_1.default.omit(new_user, ["otp", "password"]);
+            return new ApiResponse_1.SuccessResponse("Đã tạo tài khoản thành công. Xin vui lòng đăng nhập", { user: userData, tokens }).send(res);
+>>>>>>> c3630eaac1e1ecdf6b1975c05919bd8f702fdfeb
         }
     }),
     signUp: (0, asyncHandler_1.default)(async (req, res) => {
@@ -91,6 +136,7 @@ const AuthController = {
             user_name,
             roles: [role],
         });
+        await sendOTP(user);
         const keystore = await KeystoreRepo_1.default.create(user, accessTokenKey, refreshTokenKey);
         const tokens = await (0, authUtils_1.createTokens)(user, keystore.primaryKey, keystore.secondaryKey);
         await UserTransation_1.UserTransactionModel.create({
@@ -101,7 +147,8 @@ const AuthController = {
             value: 1000,
             note: "Nạp demo khi đăng kí thành công",
         });
-        return new ApiResponse_1.SuccessResponse("Đã tạo tài khoản thành công. Xin vui lòng đăng nhập", { user, tokens }).send(res);
+        const userData = lodash_1.default.omit(user, ["otp", "password"]);
+        return new ApiResponse_1.SuccessResponse("Đã tạo tài khoản thành công. Xin vui lòng đăng nhập", { user: userData, tokens }).send(res);
     }),
     signIn: (0, asyncHandler_1.default)(async (req, res) => {
         const { email, password } = req.body;
@@ -110,14 +157,48 @@ const AuthController = {
             return new ApiResponse_1.BadRequestResponse("Người dùng không tồn tại").send(res);
         if (password != user.password)
             return new ApiResponse_1.BadRequestResponse("Tài khoản hoặc mật khẩu không đúng").send(res);
+        if (!user.verified) {
+            await sendOTP(user);
+            const userData = lodash_1.default.omit(user, ["otp", "password"]);
+            return new ApiResponse_1.SuccessResponse("Đăng nhập thành công", {
+                user: userData,
+            }).send(res);
+        }
         const accessTokenKey = crypto_1.default.randomBytes(64).toString("hex");
         const refreshTokenKey = crypto_1.default.randomBytes(64).toString("hex");
         await KeystoreRepo_1.default.create(user, accessTokenKey, refreshTokenKey);
         const tokens = await (0, authUtils_1.createTokens)(user, accessTokenKey, refreshTokenKey);
+        const userData = lodash_1.default.omit(user, ["otp", "password"]);
         return new ApiResponse_1.SuccessResponse("Đăng nhập thành công", {
-            user: user,
+            user: userData,
             tokens,
         }).send(res);
+    }),
+    verifyOtp: (0, asyncHandler_1.default)(async (req, res) => {
+        const { otp } = req.body;
+        let dataOtps = (await (0, redis_1.getValue)("otps"));
+        dataOtps = dataOtps ? JSON.parse(dataOtps) : [];
+        const otpData = dataOtps.find((otpData) => otpData.otp === otp);
+        if (!otpData)
+            return new ApiResponse_1.BadRequestResponse("Mã OTP không đúng").send(res);
+        if (otpData.time < new Date().getTime())
+            return new ApiResponse_1.BadRequestResponse('Mã OTP đã hết hạn').send(res);
+        const user = otpData.user;
+        if (user) {
+            user.verified = true;
+            await User_1.UserModel.findByIdAndUpdate(user._id, user, {
+                new: true,
+            });
+        }
+        return new ApiResponse_1.SuccessResponse("OTP verified successfully", true).send(res);
+    }),
+    sendOTP: (0, asyncHandler_1.default)(async (req, res) => {
+        const { userId } = req.body;
+        const user = await User_1.UserModel.findById(userId);
+        if (!user)
+            return new ApiResponse_1.BadRequestResponse("Không tìm thấy user").send(res);
+        await sendOTP(user);
+        return new ApiResponse_1.SuccessMsgResponse("Đã gửi OTP. Vui lòng kiếm tra mail của bạn").send(res);
     }),
 };
 exports.AuthController = AuthController;

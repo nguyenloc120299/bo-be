@@ -6,8 +6,8 @@ import { Server } from "socket.io";
 import { getSum, getValueFromPercent, randomInArray } from "../../helpers/bet";
 import { getTradeValueCurrent } from "../binance";
 import { getValue, setValue } from "../../redis";
-import { UserController } from "../../controllers/user.controller";
 import { betController } from "../../controllers/bet.controller";
+import { AdminControllers } from "../../controllers/admin/admin.controller";
 
 interface BetData {
   lowPrice: number;
@@ -50,6 +50,7 @@ class Bet {
   private currentBaseVolume: number;
   private createDateTime: number;
   private psychologicalIndicators: number;
+  private member_win_percent: number;
   private io: Server;
   private bet_count: number;
   private condition_up: number;
@@ -80,6 +81,7 @@ class Bet {
     this.override_result = null;
     this.initPrice = price;
     this.previousClosePrice = 0;
+    this.member_win_percent = 50;
   }
 
   private getPsychologicalIndicators(): number {
@@ -104,8 +106,13 @@ class Bet {
       getValue("condition_down").then((condition_down) => {
         if (condition_down) this.condition_down = +condition_down as any;
       });
+      getValue("member_win_percent").then((member_win_percent) => {
+        if (member_win_percent) {
+          this.member_win_percent = parseInt(member_win_percent);
+        }
+      });
     }
-    if (!this.isBet && this.second <= 15) {
+    if (!this.isBet && this.second <= 20) {
       getValue("override_result").then((override_result) => {
         this.override_result = override_result;
       });
@@ -116,20 +123,24 @@ class Bet {
         this.currentClosePrice = getSum(
           this.override_result,
           this.currentClosePrice,
-          random(1, 5)
+          random(1, 10)
         );
+   
       } else {
         this.currentClosePrice = getSum(
           this.override_result === "up" ? "down" : "up",
           this.currentClosePrice,
-          random(1, 2)
+          random(1, 5)
         );
       }
     } else {
       if (this.bet_count === 1) {
-        let single_member_win_percent = parseInt("45");
-        let randomValue = random(5, 20);
+        let single_member_win_percent = this.member_win_percent;
+
+        
+        let randomValue = random(1, 5);
         let condition = null;
+
         if (this.condition_up > 0) {
           condition = getValueFromPercent(
             single_member_win_percent,
@@ -143,6 +154,7 @@ class Bet {
             "up"
           );
         }
+
         this.currentClosePrice = getSum(
           condition as any,
           this.currentClosePrice,
@@ -151,6 +163,7 @@ class Bet {
       } else if (this.bet_count > 1) {
         if (this.condition_up > this.condition_down) {
           let condition = randomInArray(["up", "down"]);
+
           if (
             this.currentClosePrice > this.currentOpenPrice &&
             this.second < MAX_SECOND_RESULT - 4
@@ -180,7 +193,6 @@ class Bet {
         }
       } else {
         this.realPrice = getTradeValueCurrent(this.initPrice);
-
         this.currentClosePrice = this.realPrice;
       }
     }
@@ -245,6 +257,7 @@ class Bet {
 
   public start(): void {
     let data = this.getDataPrice();
+
     setInterval(() => {
       data = this.getDataPrice();
 
@@ -253,6 +266,8 @@ class Bet {
       }
 
       if (this.isBet && this.second === MAX_SECOND_BET) {
+        console.log(this.createDateTime.toString());
+
         setValue("bet_id", this.createDateTime.toString());
       }
 
@@ -282,6 +297,7 @@ class Bet {
       this.io.to("MEMBER").emit("WE_PRICE", data);
 
       let isAllowUpdate = randomInArray(["allow", "not", "not", "not"]);
+
       if (this.isBet && isAllowUpdate === "allow") {
         let changes = {
           meter_os: random(-8, 8),
@@ -294,6 +310,10 @@ class Bet {
         });
         this.io.to("MEMBER").emit("WE_INDICATOR", changes);
       }
+
+      AdminControllers.getAnalyticData().then((res) => {
+        this.io.to("MEMBER").emit("analytic", res);
+      });
     }, 1000);
   }
 }

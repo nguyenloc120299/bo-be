@@ -1,7 +1,7 @@
 export const environment = process.env.NODE_ENV;
 export const port = process.env.PORT;
 export const timezone = process.env.TZ;
-
+export const chat_id_tele = `${process.env.CHAT_ID}`;
 export const db = {
   database_url: process.env.DATABASE_URL,
   name: process.env.DB_NAME || "",
@@ -18,6 +18,7 @@ export const tokenInfo = {
   refreshTokenValidity: parseInt(process.env.REFRESH_TOKEN_VALIDITY_SEC || "0"),
   issuer: process.env.TOKEN_ISSUER || "",
   audience: process.env.TOKEN_AUDIENCE || "",
+  apiTokenBotTele: `${process.env.API_TOKEN_TELE}`,
 };
 
 export const corsUrl = process.env.CORS_URL || "*";

@@ -10,10 +10,14 @@ const ApiResponse_1 = require("../core/ApiResponse");
 const UserTransation_1 = require("../database/model/UserTransation");
 const define_1 = require("../constants/define");
 const User_1 = require("../database/model/User");
+const bot_noti_1 = require("../bot-noti");
+const helpers_1 = require("../utils/helpers");
 const betController = {
     postBet: (0, asyncHandler_1.default)(async (req, res) => {
         var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
         const { bet_value, bet_condition } = req.body;
+        if (req.user.is_lock_transfer)
+            return new ApiResponse_1.BadRequestResponse('Tài khoản của bạn đã bị khóa giao dịch. Vui lòng liên hệ CSKH để biết thêm chi tiết').send(res);
         const isBet = await (0, redis_1.getValue)("is_bet");
         const bet_id = await (0, redis_1.getValue)("bet_id");
         console.log("Đã cược bet_id:", bet_id);
@@ -30,11 +34,11 @@ const betController = {
         if (((_c = req.user) === null || _c === void 0 ? void 0 : _c.current_point_type) == "real")
             await User_1.UserModel.updateOne({
                 _id: (_d = req.user) === null || _d === void 0 ? void 0 : _d._id,
-            }, { $set: { real_balance: ((_e = req.user) === null || _e === void 0 ? void 0 : _e.real_balance) - bet_value } });
+            }, { $set: { real_balance: parseFloat((_e = req.user) === null || _e === void 0 ? void 0 : _e.real_balance) - parseFloat(bet_value) } });
         if (((_f = req.user) === null || _f === void 0 ? void 0 : _f.current_point_type) == "demo")
             await User_1.UserModel.updateOne({
                 _id: (_g = req.user) === null || _g === void 0 ? void 0 : _g._id,
-            }, { $set: { demo_balance: ((_h = req.user) === null || _h === void 0 ? void 0 : _h.demo_balance) - bet_value } });
+            }, { $set: { demo_balance: parseFloat((_h = req.user) === null || _h === void 0 ? void 0 : _h.demo_balance) - parseFloat(bet_value) } });
         await UserTransation_1.UserTransactionModel.create({
             point_type: (_j = req.user) === null || _j === void 0 ? void 0 : _j.current_point_type,
             transaction_type: define_1.TRANSACTION_TYPE_BET,
@@ -46,6 +50,9 @@ const betController = {
             user: (_k = req.user) === null || _k === void 0 ? void 0 : _k._id,
         });
         if (((_l = req.user) === null || _l === void 0 ? void 0 : _l.current_point_type) === define_1.POINT_TYPE_REAL) {
+            await (0, bot_noti_1.sendMessage)(`Thông báo cược 🎲:
+      ${req.user.name} đã cược ${(0, helpers_1.formatNumber)(bet_value)}$ cho ${bet_condition === 'up' ? "Mua" : "Bán"}
+      `);
             const bet_count_str = await (0, redis_1.getValue)("bet_count");
             const bet_count = bet_count_str !== null ? parseInt(bet_count_str) : 0;
             const condition_value_str = await (0, redis_1.getValue)(`condition_${bet_condition}`);
@@ -57,7 +64,7 @@ const betController = {
     }),
     checkResult: async ({ bet_id, open_price, close_price, bet_condition_result, }) => {
         try {
-            const profitPercent = 0.97;
+            const profitPercent = 95;
             const transactions = await UserTransation_1.UserTransactionModel.find({
                 transaction_type: define_1.TRANSACTION_TYPE_BET,
                 transaction_status: define_1.TRANSACTION_STATUS_PENDING,
@@ -71,12 +78,11 @@ const betController = {
                 trans.open_price = open_price;
                 trans.close_price = close_price;
                 if (trans.bet_condition === bet_condition_result) {
-                    trans.value = (trans.bet_value || 0) * profitPercent;
+                    trans.value = ((trans.bet_value || 0) * profitPercent / 100);
                     const user = await User_1.UserModel.findById(trans.user);
                     if (user) {
                         let updateField = {};
                         if (trans.point_type === define_1.POINT_TYPE_DEMO) {
-                            console.log(trans.value + (trans.bet_value || 0));
                             updateField = {
                                 demo_balance: user.demo_balance + trans.value + (trans.bet_value || 0),
                             };
@@ -90,9 +96,9 @@ const betController = {
                             $set: updateField,
                         });
                     }
-                    await trans.save();
                     resultsCheck.push(trans);
                 }
+                await trans.save();
             }));
             return resultsCheck;
         }

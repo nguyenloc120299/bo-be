@@ -7,9 +7,10 @@ exports.connection = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const config_1 = require("../config");
 // Build the connection string
-const dbURI = `mongodb+srv://${config_1.db.user}:${config_1.db.password}@cluster0.bgzxt.mongodb.net/${config_1.db.name}?retryWrites=true&
-w=majority`;
-console.log(dbURI);
+// const dbURI = `mongodb+srv://${db.user}:${db.password}@cluster0.bgzxt.mongodb.net/${db.name}?retryWrites=true&
+// w=majority`;
+// console.log(dbURI);
+const dbURI = `mongodb://${config_1.db.user}:${config_1.db.password}@103.57.220.91:27017/${config_1.db.name}`;
 const options = {
     autoIndex: true,
     minPoolSize: config_1.db.minPoolSize,
@@ -36,7 +37,7 @@ mongoose_1.default
     console.log("Mongoose connection error");
 });
 // CONNECTION EVENTS
-// When successfully connected
+// When successfully connectedping
 mongoose_1.default.connection.on("connected", () => {
     console.log("Mongoose connected name: BO");
 });

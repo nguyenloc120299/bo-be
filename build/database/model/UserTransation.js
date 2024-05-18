@@ -13,6 +13,7 @@ const schema = new mongoose_1.Schema({
     value: { type: mongoose_1.Schema.Types.Number, required: true },
     bet_condition: { type: mongoose_1.Schema.Types.String },
     bet_value: { type: mongoose_1.Schema.Types.Number },
+    fiat_amount: { type: mongoose_1.Schema.Types.Number },
     bet_id: { type: mongoose_1.Schema.Types.String },
     note: { type: mongoose_1.Schema.Types.String },
     open_price: { type: mongoose_1.Schema.Types.Number },

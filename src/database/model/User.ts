@@ -20,6 +20,12 @@ const schema = new Schema(
       type: Schema.Types.String,
       trim: true,
     },
+    otp: {
+      type: Schema.Types.String,
+    },
+    expired: {
+      type: Schema.Types.Number,
+    },
     real_balance: {
       type: Schema.Types.Number,
       default: 0,
@@ -34,14 +40,17 @@ const schema = new Schema(
     last_name: {
       type: Schema.Types.String,
     },
+    region: {
+      type: Schema.Types.String,
+    },
     identity_number: {
       type: Schema.Types.Number,
     },
     before_identity_card: {
-      type: Schema.Types.Number,
+      type: Schema.Types.String,
     },
     after_identity_card: {
-      type: Schema.Types.Number,
+      type: Schema.Types.String,
     },
     enable_sound: {
       type: Schema.Types.Boolean,
@@ -56,10 +65,31 @@ const schema = new Schema(
     phone: {
       type: Schema.Types.String,
     },
+    is_kyc: {
+      type: Schema.Types.String,
+      default: "no_kyc",
+    },
     is_lock_transfer: {
       type: Schema.Types.Boolean,
+      default: false,
+    },
+    is_lock_withdraw: {
+      type: Schema.Types.Boolean,
+      default: false,
     },
     two_fa: {
+      type: Schema.Types.String,
+    },
+    address: {
+      type: Schema.Types.String,
+    },
+    name_bank: {
+      type: Schema.Types.String,
+    },
+    number_bank: {
+      type: Schema.Types.String,
+    },
+    account_name: {
       type: Schema.Types.String,
     },
     is_two_fa: {
@@ -74,7 +104,6 @@ const schema = new Schema(
       unique: true,
       sparse: true, // allows null
       trim: true,
-
     },
     password: {
       type: Schema.Types.String,

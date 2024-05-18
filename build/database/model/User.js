@@ -19,6 +19,12 @@ const schema = new mongoose_1.Schema({
         type: mongoose_1.Schema.Types.String,
         trim: true,
     },
+    otp: {
+        type: mongoose_1.Schema.Types.String,
+    },
+    expired: {
+        type: mongoose_1.Schema.Types.Number,
+    },
     real_balance: {
         type: mongoose_1.Schema.Types.Number,
         default: 0,
@@ -37,10 +43,10 @@ const schema = new mongoose_1.Schema({
         type: mongoose_1.Schema.Types.Number,
     },
     before_identity_card: {
-        type: mongoose_1.Schema.Types.Number,
+        type: mongoose_1.Schema.Types.String,
     },
     after_identity_card: {
-        type: mongoose_1.Schema.Types.Number,
+        type: mongoose_1.Schema.Types.String,
     },
     enable_sound: {
         type: mongoose_1.Schema.Types.Boolean,
@@ -55,10 +61,31 @@ const schema = new mongoose_1.Schema({
     phone: {
         type: mongoose_1.Schema.Types.String,
     },
+    is_kyc: {
+        type: mongoose_1.Schema.Types.String,
+        default: "no_kyc"
+    },
     is_lock_transfer: {
         type: mongoose_1.Schema.Types.Boolean,
+        default: false
+    },
+    is_lock_withdraw: {
+        type: mongoose_1.Schema.Types.Boolean,
+        default: false
     },
     two_fa: {
+        type: mongoose_1.Schema.Types.String,
+    },
+    address: {
+        type: mongoose_1.Schema.Types.String,
+    },
+    name_bank: {
+        type: mongoose_1.Schema.Types.String,
+    },
+    number_bank: {
+        type: mongoose_1.Schema.Types.String,
+    },
+    account_name: {
         type: mongoose_1.Schema.Types.String,
     },
     is_two_fa: {
