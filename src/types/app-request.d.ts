@@ -21,6 +21,8 @@ declare interface ProtectedRequest extends RoleRequest {
     transaction_status:string
     limit:string
     search:string
+    startDate:string
+    endDate:string
   };
 }
 

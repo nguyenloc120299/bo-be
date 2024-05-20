@@ -11,12 +11,14 @@ import {
 import KeystoreRepo from "../database/repository/KeystoreRepo";
 import { UserTransactionModel } from "../database/model/UserTransation";
 import {
+  BET_CONDITION_UP,
   MERCHANT_ID,
   MERCHANT_KEY,
   PAYMENT_TYPE_BANK,
   POINT_TYPE_REAL,
   TRANSACTION_STATUS_FINISH,
   TRANSACTION_STATUS_PENDING,
+  TRANSACTION_TYPE_BET,
   TRANSACTION_TYPE_RECHARGE,
   TRANSACTION_TYPE_WITHDRAWAL,
 } from "../constants/define";
@@ -216,8 +218,10 @@ const UserController = {
       name_bank,
       number_bank,
       account_name,
+      profilePicUrl,
     } = req.body;
     const user = req.user;
+    user.profilePicUrl = profilePicUrl || user.profilePicUrl;
     user.avatar = avatar || user.avatar;
     user.current_point_type = point_type || user.point_type;
     user.first_name = first_name || user.first_name;
@@ -253,6 +257,55 @@ const UserController = {
         auth_string: qrCodeData,
       });
     });
+  }),
+
+  getDashboard: asyncHandler(async (req: ProtectedRequest, res) => {
+    const transactions = await UserTransactionModel.find({
+      user: req.user._id,
+      point_type: POINT_TYPE_REAL,
+      transaction_type: TRANSACTION_TYPE_BET,
+      transaction_status: TRANSACTION_STATUS_FINISH,
+    });
+
+    const totalAll = transactions.length;
+    const fund = transactions.reduce(
+      (sum, transaction: any) => sum + transaction.bet_value,
+      0
+    );
+
+    const totalWinCount = transactions.filter(
+      (transaction) => transaction.value > 0
+    ).length;
+    const totalLoseCount = transactions.filter(
+      (transaction) => transaction.value < 0
+    ).length;
+
+    const profit = transactions.reduce(
+      (sum, transaction) => sum + transaction.value,
+      0
+    );
+
+    const revenue = fund + profit;
+
+    const totalUp = transactions.filter(
+      (transaction) => transaction.bet_condition === BET_CONDITION_UP
+    ).length;
+
+    // Round down fund, profit, and revenue to the nearest integer
+    const floorFund = Math.floor(fund);
+    const floorProfit = Math.floor(profit);
+    const floorRevenue = Math.floor(revenue);
+
+    return new SuccessResponse("ok", {
+      totalAll,
+      floorFund,
+      totalWinCount,
+      totalLoseCount,
+      floorProfit,
+      floorRevenue,
+      totalUp,
+      percent_up: totalAll != 0 ? Math.floor((totalUp * 100) / totalAll) : 0,
+    }).send(res);
   }),
 
   logOut: asyncHandler(async (req: ProtectedRequest, res) => {

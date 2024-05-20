@@ -187,12 +187,21 @@ const betController = {
 
   getTransaction: asyncHandler(async (req: ProtectedRequest, res) => {
     const page = (req.query.page || 1) as any;
-    const limit = (req.query.limit || 20) as any;
+    const limit = (req.query.limit || 20) as any; 
+    const startDateStr = req.query.startDate as string;
+    const endDateStr = req.query.endDate as string;
+
+    const startDate = startDateStr && moment(startDateStr).isValid() ? moment(startDateStr).toDate() : null;
+    const endDate = endDateStr && moment(endDateStr).isValid() ? moment(endDateStr).toDate() : null;
+
+    const dateCondition = startDate && endDate ? { $gte: startDate, $lte: endDate } : {};
+
     const transations = await UserTransactionModel.find({
       user: req.user?._id,
       transaction_type: TRANSACTION_TYPE_BET,
-      point_type: req?.user?.current_point_type,
+      point_type: POINT_TYPE_REAL,
       transaction_status: req.query?.transaction_status,
+      createdAt: dateCondition
     })
       .sort({
         createdAt: -1,
@@ -200,8 +209,11 @@ const betController = {
       .skip(page - 1)
       .limit(limit)
       .exec();
+
     let total_bet_open = 0;
+    
     if (req.query.transaction_status == TRANSACTION_STATUS_PENDING) {
+
       total_bet_open = await UserTransactionModel.countDocuments({
         user: req.user?._id,
         transaction_type: TRANSACTION_TYPE_BET,
@@ -209,6 +221,7 @@ const betController = {
         transaction_status: req.query?.transaction_status,
       });
     }
+    
     return new SuccessResponse("ok", {
       total_bet_open,
       transations,
