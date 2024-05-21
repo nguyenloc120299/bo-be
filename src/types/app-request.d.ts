@@ -23,6 +23,7 @@ declare interface ProtectedRequest extends RoleRequest {
     search:string
     startDate:string
     endDate:string
+    transaction_type:string
   };
 }
 
