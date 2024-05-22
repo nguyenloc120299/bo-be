@@ -16,6 +16,14 @@ const schema = new Schema(
       require: true,
       maxlength: 200,
     },
+    name_code:{
+      type:Schema.Types.String,
+      require:true
+    },
+    ref_code:{
+      type:Schema.Types.String,
+      require:true
+    },
     profilePicUrl: {
       type: Schema.Types.String,
       trim: true,

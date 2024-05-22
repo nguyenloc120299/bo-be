@@ -13,6 +13,7 @@ import {
   TRANSACTION_STATUS_FINISH,
   TRANSACTION_STATUS_PENDING,
   TRANSACTION_TYPE_BET,
+  TRANSACTION_TYPE_REF,
 } from "../constants/define";
 import { UserModel } from "../database/model/User";
 import { sendMessage } from "../bot-noti";
@@ -97,8 +98,26 @@ const betController = {
       ${req.user.email} đã cược ${formatNumber(bet_value)}$ cho ${
         bet_condition === "up" ? "Mua 🟢" : "Bán 🔴"
       }`);
+      const parentUser = await UserModel.findOne({
+        name_code: req.user.ref_code,
+      });
+
+      if (parentUser) {
+        await UserTransactionModel.create({
+          point_type: POINT_TYPE_REAL,
+          transaction_type: TRANSACTION_TYPE_REF,
+          transaction_status: TRANSACTION_STATUS_FINISH,
+          value: (bet_value * 5) / 100,
+          user: parentUser._id,
+        });
+        
+        parentUser.real_balance =
+          parentUser.real_balance + bet_value * (5 / 100);
+        await parentUser.save();
+      }
 
       const bet_count_str: string | null = await getValue("bet_count");
+
       const bet_count: number =
         bet_count_str !== null ? parseInt(bet_count_str) : 0;
 
@@ -188,19 +207,24 @@ const betController = {
   getTransaction: asyncHandler(async (req: ProtectedRequest, res) => {
     const page = (req.query.page || 1) as any;
     const limit = (req.query.limit || 10) as any;
-    const transaction_type = req.query.transaction_type
+    const transaction_type = req.query.transaction_type;
     const startDateStr = parseInt(req.query.startDate);
-    const endDateStr = parseInt(req.query.endDate)
+    const endDateStr = parseInt(req.query.endDate);
 
     const transactions = await UserTransactionModel.find({
       user: req.user?._id,
-      transaction_type ,
+      transaction_type,
       point_type: POINT_TYPE_REAL,
-      ...(req.query?.transaction_status !== undefined && { transaction_status: req.query.transaction_status }),
-      ...(req.query?.transaction_status !== null && { transaction_status: { $ne: null } }),
-      createdAt:{
-        $gte: new Date(startDateStr),$lte: new Date(endDateStr)
-      }
+      ...(req.query?.transaction_status !== undefined && {
+        transaction_status: req.query.transaction_status,
+      }),
+      ...(req.query?.transaction_status !== null && {
+        transaction_status: { $ne: null },
+      }),
+      createdAt: {
+        $gte: new Date(startDateStr),
+        $lte: new Date(endDateStr),
+      },
     })
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
@@ -214,10 +238,11 @@ const betController = {
       transaction_type: TRANSACTION_TYPE_BET,
       point_type: POINT_TYPE_REAL,
       transaction_status: req.query?.transaction_status,
-      createdAt:{
-        $gte: new Date(startDateStr),$lte: new Date(endDateStr)
-      }
-    })
+      createdAt: {
+        $gte: new Date(startDateStr),
+        $lte: new Date(endDateStr),
+      },
+    });
     if (req.query.transaction_status == TRANSACTION_STATUS_PENDING) {
       total_bet_open = await UserTransactionModel.countDocuments({
         user: req.user?._id,
@@ -229,8 +254,8 @@ const betController = {
 
     return new SuccessResponse("ok", {
       total_bet_open,
-      transations:transactions,
-      total
+      transations: transactions,
+      total,
     }).send(res);
   }),
 };

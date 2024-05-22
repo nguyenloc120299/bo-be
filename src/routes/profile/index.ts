@@ -22,6 +22,8 @@ profileRouter.get("/two-fa-key", UserController.getTwoFaKey);
 
 profileRouter.post("/kyc-profile", UserController.postKycProfile);
 
+profileRouter.get("/analysics/ref", UserController.getAnalysisRef);
+
 profileRouter.post("/logout", UserController.logOut);
 
 export default profileRouter;

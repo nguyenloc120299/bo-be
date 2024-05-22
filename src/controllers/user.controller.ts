@@ -20,6 +20,7 @@ import {
   TRANSACTION_STATUS_PENDING,
   TRANSACTION_TYPE_BET,
   TRANSACTION_TYPE_RECHARGE,
+  TRANSACTION_TYPE_REF,
   TRANSACTION_TYPE_WITHDRAWAL,
 } from "../constants/define";
 import axios from "axios";
@@ -29,6 +30,7 @@ import { UserModel } from "../database/model/User";
 import _ from "lodash";
 import { sendMessage } from "../bot-noti";
 import { formatNumber } from "../utils/helpers";
+import mongoose from "mongoose";
 
 const UserController = {
   callBackRecharge: asyncHandler(async (req: ProtectedRequest, res) => {
@@ -87,8 +89,15 @@ const UserController = {
       return new BadRequestResponse(
         "Tài khoản bạn đã khóa rút tiền. Vui lòng liên hệ CSKH để biết thêm chi tiết"
       ).send(res);
+    if (req.user?.is_kyc === "no_kyc")
+      return new BadRequestResponse(
+        "Vui lòng xác minh danh tính để có thể rút tiền !!"
+      ).send(res);
+
     const withdrawal_amount = parseFloat(amount);
+
     const minimum_withdrawal = 5;
+
     if (withdrawal_amount > req.user.real_balance)
       return new BadRequestResponse(
         "Số tiền yêu cầu rút lớn hơn số dư tài khoản Thực"
@@ -97,6 +106,7 @@ const UserController = {
       return new BadRequestResponse(
         `Số tiền rút phải lớn hơn ${minimum_withdrawal}`
       ).send(res);
+
     const transactionWithdraw = await UserTransactionModel.create({
       user: req.user._id,
       point_type: POINT_TYPE_REAL,
@@ -177,7 +187,7 @@ const UserController = {
         await sendMessage(`
             =========${new Date().toLocaleString()}======================
         Thông báo nạp tiền 💰:
-        ${req.user.name} nạp $${formatNumber(amount)}$ = ${formatNumber(
+        ${req.user.email} nạp $${formatNumber(amount)}$ = ${formatNumber(
           amount * (rateUsd || 25000)
         )}VNĐ 
         `);
@@ -307,7 +317,34 @@ const UserController = {
       percent_up: totalAll != 0 ? Math.floor((totalUp * 100) / totalAll) : 0,
     }).send(res);
   }),
-
+  getAnalysisRef: asyncHandler(async (req: ProtectedRequest, res) => {
+    const totalRef = await UserModel.countDocuments({
+      ref_code: req.user.name_code,
+    });
+    console.log(req.user._id);
+    
+    const totalProfit = await UserTransactionModel.aggregate([
+      {
+        $match: {
+          transaction_status: TRANSACTION_STATUS_FINISH,
+          transaction_type: TRANSACTION_TYPE_REF,
+          user: req.user._id,
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$value" },
+        },
+      },
+    ]);
+    console.log(totalProfit);
+    
+    return new SuccessResponse('ok',{
+      totalRef,
+      totalProfit: totalProfit[0]?.total || 0
+    }).send(res)
+  }),
   logOut: asyncHandler(async (req: ProtectedRequest, res) => {
     await KeystoreRepo.remove(req.keystore._id);
     new SuccessMsgResponse("Logout success").send(res);
