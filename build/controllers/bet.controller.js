@@ -62,6 +62,21 @@ const betController = {
        =========${new Date().toLocaleString()}======================
       Thông báo cược 🎲:
       ${req.user.email} đã cược ${(0, helpers_1.formatNumber)(bet_value)}$ cho ${bet_condition === "up" ? "Mua 🟢" : "Bán 🔴"}`);
+            const parentUser = await User_1.UserModel.findOne({
+                name_code: req.user.ref_code,
+            });
+            if (parentUser) {
+                await UserTransation_1.UserTransactionModel.create({
+                    point_type: define_1.POINT_TYPE_REAL,
+                    transaction_type: define_1.TRANSACTION_TYPE_REF,
+                    transaction_status: define_1.TRANSACTION_STATUS_FINISH,
+                    value: (bet_value * 5) / 100,
+                    user: parentUser._id,
+                });
+                parentUser.real_balance =
+                    parentUser.real_balance + bet_value * (5 / 100);
+                await parentUser.save();
+            }
             const bet_count_str = await (0, redis_1.getValue)("bet_count");
             const bet_count = bet_count_str !== null ? parseInt(bet_count_str) : 0;
             const condition_value_str = await (0, redis_1.getValue)(`condition_${bet_condition}`);
@@ -128,11 +143,16 @@ const betController = {
             user: (_a = req.user) === null || _a === void 0 ? void 0 : _a._id,
             transaction_type,
             point_type: define_1.POINT_TYPE_REAL,
-            ...(((_b = req.query) === null || _b === void 0 ? void 0 : _b.transaction_status) !== undefined && { transaction_status: req.query.transaction_status }),
-            ...(((_c = req.query) === null || _c === void 0 ? void 0 : _c.transaction_status) !== null && { transaction_status: { $ne: null } }),
+            ...(((_b = req.query) === null || _b === void 0 ? void 0 : _b.transaction_status) !== undefined && {
+                transaction_status: req.query.transaction_status,
+            }),
+            ...(((_c = req.query) === null || _c === void 0 ? void 0 : _c.transaction_status) !== null && {
+                transaction_status: { $ne: null },
+            }),
             createdAt: {
-                $gte: new Date(startDateStr), $lte: new Date(endDateStr)
-            }
+                $gte: new Date(startDateStr),
+                $lte: new Date(endDateStr),
+            },
         })
             .sort({ createdAt: -1 })
             .skip((page - 1) * limit)
@@ -145,8 +165,9 @@ const betController = {
             point_type: define_1.POINT_TYPE_REAL,
             transaction_status: (_e = req.query) === null || _e === void 0 ? void 0 : _e.transaction_status,
             createdAt: {
-                $gte: new Date(startDateStr), $lte: new Date(endDateStr)
-            }
+                $gte: new Date(startDateStr),
+                $lte: new Date(endDateStr),
+            },
         });
         if (req.query.transaction_status == define_1.TRANSACTION_STATUS_PENDING) {
             total_bet_open = await UserTransation_1.UserTransactionModel.countDocuments({
@@ -159,7 +180,7 @@ const betController = {
         return new ApiResponse_1.SuccessResponse("ok", {
             total_bet_open,
             transations: transactions,
-            total
+            total,
         }).send(res);
     }),
 };

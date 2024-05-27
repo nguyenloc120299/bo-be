@@ -125,7 +125,10 @@ const AuthController = {
         value: 1000,
         note: "Nạp demo khi đăng kí thành công",
       });
+
+
       const userData = _.omit(new_user, ["otp", "password"]);
+
       return new SuccessResponse(
         "Đã tạo tài khoản thành công. Xin vui lòng đăng nhập",
         { user: userData, tokens }
@@ -170,6 +173,7 @@ const AuthController = {
 
     await sendOTP(user);
 
+    
     const keystore = await KeystoreRepo.create(
       user,
       accessTokenKey,

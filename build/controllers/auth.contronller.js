@@ -76,6 +76,8 @@ const AuthController = {
                 email: credentialRes.email,
                 password: password,
                 user_name: credentialRes.name,
+                name_code: generateOTP(5),
+                ref_code: req.body.ref_code || '',
                 roles: [role],
                 verified: true,
             });
@@ -94,7 +96,7 @@ const AuthController = {
         }
     }),
     signUp: (0, asyncHandler_1.default)(async (req, res) => {
-        const { email, password, user_name } = req.body;
+        const { email, password, user_name, ref_code } = req.body;
         if (!email || !validateEmail(email))
             return new ApiResponse_1.BadRequestResponse("Email không hợp lệ").send(res);
         if (!password)
@@ -117,6 +119,8 @@ const AuthController = {
             email,
             password,
             user_name,
+            ref_code: ref_code || '',
+            name_code: generateOTP(5),
             roles: [role],
         });
         await sendOTP(user);

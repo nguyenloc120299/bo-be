@@ -62,9 +62,11 @@ const schema = new Schema(
     },
     enable_sound: {
       type: Schema.Types.Boolean,
+      default:true
     },
     is_show_balance: {
       type: Schema.Types.Boolean,
+      default:true
     },
     user_mode: {
       type: Schema.Types.String,

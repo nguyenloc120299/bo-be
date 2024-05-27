@@ -17,6 +17,7 @@ profileRouter.get("/me", user_controller_1.UserController.getProfile);
 profileRouter.get("/dashboard", user_controller_1.UserController.getDashboard);
 profileRouter.get("/two-fa-key", user_controller_1.UserController.getTwoFaKey);
 profileRouter.post("/kyc-profile", user_controller_1.UserController.postKycProfile);
+profileRouter.get("/analysics/ref", user_controller_1.UserController.getAnalysisRef);
 profileRouter.post("/logout", user_controller_1.UserController.logOut);
 exports.default = profileRouter;
 //# sourceMappingURL=index.js.map
