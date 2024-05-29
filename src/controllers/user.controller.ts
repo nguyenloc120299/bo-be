@@ -239,7 +239,7 @@ const UserController = {
     user.current_point_type = current_point_type || user.current_point_type;
     user.enable_sound = typeof enable_sound !='undefined' ?  enable_sound :user.enable_sound;
     user.is_show_balance = typeof is_show_balance != 'undefined' ? is_show_balance : user.is_show_balance;
-    user.address = address || user.address;
+    user.address = address || user.address; 
     user.name_bank = name_bank || user.name_bank;
     user.number_bank = number_bank || user.number_bank;
     user.account_name = account_name || user.account_name;
@@ -321,7 +321,7 @@ const UserController = {
     const totalRef = await UserModel.countDocuments({
       ref_code: req.user.name_code,
     });
-    console.log(req.user._id);
+
     
     const totalProfit = await UserTransactionModel.aggregate([
       {

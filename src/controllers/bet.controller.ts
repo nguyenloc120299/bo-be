@@ -33,6 +33,17 @@ const betController = {
     const bet_id = await getValue("bet_id");
 
     console.log("Đã cược bet_id:", bet_id);
+    const betUser = await UserTransactionModel.findOne({
+      bet_id,
+      user: req.user._id,
+      transaction_type: TRANSACTION_TYPE_BET,
+      transaction_status: TRANSACTION_STATUS_PENDING,
+    });
+
+    if (betUser)
+      return new BadRequestResponse(
+        "Bạn đã cược phiên này rồi. Vui lòng đợi phiên sau"
+      ).send(res);
 
     if (!isBet || !bet_id)
       return new BadRequestResponse("Vui lòng chờ phiên đặt cược bắt đầu").send(
@@ -110,7 +121,7 @@ const betController = {
           value: (bet_value * 5) / 100,
           user: parentUser._id,
         });
-        
+
         parentUser.real_balance =
           parentUser.real_balance + bet_value * (5 / 100);
         await parentUser.save();
