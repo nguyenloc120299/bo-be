@@ -141,48 +141,46 @@ const betController = {
         }
     },
     getTransaction: (0, asyncHandler_1.default)(async (req, res) => {
-        var _a, _b, _c, _d, _e, _f, _g, _h;
+        var _a, _b, _c, _d, _e, _f;
         const page = (req.query.page || 1);
         const limit = (req.query.limit || 10);
         const transaction_type = req.query.transaction_type;
+        const transaction_status = req.query.transaction_status;
         const startDateStr = parseInt(req.query.startDate);
         const endDateStr = parseInt(req.query.endDate);
-        const transactions = await UserTransation_1.UserTransactionModel.find({
+        const query = {
             user: (_a = req.user) === null || _a === void 0 ? void 0 : _a._id,
             transaction_type,
-            point_type: define_1.POINT_TYPE_REAL,
             ...(((_b = req.query) === null || _b === void 0 ? void 0 : _b.transaction_status) !== undefined && {
                 transaction_status: req.query.transaction_status,
             }),
             ...(((_c = req.query) === null || _c === void 0 ? void 0 : _c.transaction_status) !== null && {
                 transaction_status: { $ne: null },
             }),
-            createdAt: {
+        };
+        // Conditionally add date range to query if startDateStr and endDateStr are defined
+        if (startDateStr && endDateStr) {
+            query.createdAt = {
                 $gte: new Date(startDateStr),
                 $lte: new Date(endDateStr),
-            },
-        })
+            };
+        }
+        if (transaction_status) {
+            query.transaction_status = transaction_status;
+        }
+        const transactions = await UserTransation_1.UserTransactionModel.find(query)
             .sort({ createdAt: -1 })
             .skip((page - 1) * limit)
             .limit(limit)
             .exec();
         let total_bet_open = 0;
-        const total = await UserTransation_1.UserTransactionModel.countDocuments({
-            user: (_d = req.user) === null || _d === void 0 ? void 0 : _d._id,
-            transaction_type: define_1.TRANSACTION_TYPE_BET,
-            point_type: define_1.POINT_TYPE_REAL,
-            transaction_status: (_e = req.query) === null || _e === void 0 ? void 0 : _e.transaction_status,
-            createdAt: {
-                $gte: new Date(startDateStr),
-                $lte: new Date(endDateStr),
-            },
-        });
+        const total = await UserTransation_1.UserTransactionModel.countDocuments(query);
         if (req.query.transaction_status == define_1.TRANSACTION_STATUS_PENDING) {
             total_bet_open = await UserTransation_1.UserTransactionModel.countDocuments({
-                user: (_f = req.user) === null || _f === void 0 ? void 0 : _f._id,
+                user: (_d = req.user) === null || _d === void 0 ? void 0 : _d._id,
                 transaction_type: define_1.TRANSACTION_TYPE_BET,
-                point_type: (_g = req === null || req === void 0 ? void 0 : req.user) === null || _g === void 0 ? void 0 : _g.current_point_type,
-                transaction_status: (_h = req.query) === null || _h === void 0 ? void 0 : _h.transaction_status,
+                point_type: (_e = req === null || req === void 0 ? void 0 : req.user) === null || _e === void 0 ? void 0 : _e.current_point_type,
+                transaction_status: (_f = req.query) === null || _f === void 0 ? void 0 : _f.transaction_status,
             });
         }
         return new ApiResponse_1.SuccessResponse("ok", {
