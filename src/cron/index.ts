@@ -17,6 +17,8 @@ const getRateUSD = async () => {
       "https://open.er-api.com/v6/latest/USD?apikey=TmbqfKIuJDo0O5Ip"
     );
     if (res && res?.data) {
+
+      
       await setValue("price_usd", res?.data?.rates?.VND || 25000);
     }
   } catch (error) {

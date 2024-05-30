@@ -21,6 +21,14 @@ const betController = {
         const isBet = await (0, redis_1.getValue)("is_bet");
         const bet_id = await (0, redis_1.getValue)("bet_id");
         console.log("Đã cược bet_id:", bet_id);
+        const betUser = await UserTransation_1.UserTransactionModel.findOne({
+            bet_id,
+            user: req.user._id,
+            transaction_type: define_1.TRANSACTION_TYPE_BET,
+            transaction_status: define_1.TRANSACTION_STATUS_PENDING,
+        });
+        if (betUser)
+            return new ApiResponse_1.BadRequestResponse("Bạn đã cược phiên này rồi. Vui lòng đợi phiên sau").send(res);
         if (!isBet || !bet_id)
             return new ApiResponse_1.BadRequestResponse("Vui lòng chờ phiên đặt cược bắt đầu").send(res);
         if (bet_value < 1)

@@ -154,8 +154,8 @@ const UserController = {
         user.first_name = first_name || user.first_name;
         user.last_name = last_name || user.last_name;
         user.current_point_type = current_point_type || user.current_point_type;
-        user.enable_sound = enable_sound || user.enable_sound;
-        user.is_show_balance = is_show_balance || user.is_show_balance;
+        user.enable_sound = typeof enable_sound != 'undefined' ? enable_sound : user.enable_sound;
+        user.is_show_balance = typeof is_show_balance != 'undefined' ? is_show_balance : user.is_show_balance;
         user.address = address || user.address;
         user.name_bank = name_bank || user.name_bank;
         user.number_bank = number_bank || user.number_bank;
@@ -217,7 +217,6 @@ const UserController = {
         const totalRef = await User_1.UserModel.countDocuments({
             ref_code: req.user.name_code,
         });
-        console.log(req.user._id);
         const totalProfit = await UserTransation_1.UserTransactionModel.aggregate([
             {
                 $match: {

@@ -410,7 +410,7 @@ const AdminControllers = {
     const totalValueDeposit = data[0]?.totalValue;
     const totalValueFiat = data[0]?.totalValueFiat;
     const totalValueWithdraw = data1[0]?.totalValue;
-    const totalValueFiatWithdraw = data[0]?.totalValueFiat;
+    const totalValueFiatWithdraw = data1[0]?.totalValueFiat;
 
     return new SuccessResponse("ok", {
       totalValueDeposit,

@@ -219,24 +219,34 @@ const betController = {
     const page = (req.query.page || 1) as any;
     const limit = (req.query.limit || 10) as any;
     const transaction_type = req.query.transaction_type;
+    const transaction_status = req.query.transaction_status;
     const startDateStr = parseInt(req.query.startDate);
     const endDateStr = parseInt(req.query.endDate);
 
-    const transactions = await UserTransactionModel.find({
+    const query = {
       user: req.user?._id,
       transaction_type,
-      point_type: POINT_TYPE_REAL,
       ...(req.query?.transaction_status !== undefined && {
         transaction_status: req.query.transaction_status,
       }),
       ...(req.query?.transaction_status !== null && {
         transaction_status: { $ne: null },
       }),
-      createdAt: {
+    } as any;
+
+    // Conditionally add date range to query if startDateStr and endDateStr are defined
+    if (startDateStr && endDateStr) {
+      query.createdAt = {
         $gte: new Date(startDateStr),
         $lte: new Date(endDateStr),
-      },
-    })
+      };
+    }
+
+    if (transaction_status) {
+      query.transaction_status = transaction_status
+    }
+
+    const transactions = await UserTransactionModel.find(query)
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
@@ -244,16 +254,8 @@ const betController = {
 
     let total_bet_open = 0;
 
-    const total = await UserTransactionModel.countDocuments({
-      user: req.user?._id,
-      transaction_type: TRANSACTION_TYPE_BET,
-      point_type: POINT_TYPE_REAL,
-      transaction_status: req.query?.transaction_status,
-      createdAt: {
-        $gte: new Date(startDateStr),
-        $lte: new Date(endDateStr),
-      },
-    });
+    const total = await UserTransactionModel.countDocuments(query);
+
     if (req.query.transaction_status == TRANSACTION_STATUS_PENDING) {
       total_bet_open = await UserTransactionModel.countDocuments({
         user: req.user?._id,

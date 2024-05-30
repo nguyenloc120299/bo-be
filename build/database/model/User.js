@@ -61,9 +61,11 @@ const schema = new mongoose_1.Schema({
     },
     enable_sound: {
         type: mongoose_1.Schema.Types.Boolean,
+        default: true
     },
     is_show_balance: {
         type: mongoose_1.Schema.Types.Boolean,
+        default: true
     },
     user_mode: {
         type: mongoose_1.Schema.Types.String,
