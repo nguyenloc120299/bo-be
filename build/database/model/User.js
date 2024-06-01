@@ -39,6 +39,9 @@ const schema = new mongoose_1.Schema({
     last_name: {
         type: mongoose_1.Schema.Types.String,
     },
+    region: {
+        type: mongoose_1.Schema.Types.String,
+    },
     identity_number: {
         type: mongoose_1.Schema.Types.Number,
     },
@@ -63,15 +66,15 @@ const schema = new mongoose_1.Schema({
     },
     is_kyc: {
         type: mongoose_1.Schema.Types.String,
-        default: "no_kyc"
+        default: "no_kyc",
     },
     is_lock_transfer: {
         type: mongoose_1.Schema.Types.Boolean,
-        default: false
+        default: false,
     },
     is_lock_withdraw: {
         type: mongoose_1.Schema.Types.Boolean,
-        default: false
+        default: false,
     },
     two_fa: {
         type: mongoose_1.Schema.Types.String,

@@ -5,25 +5,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserController = void 0;
 const crypto_1 = __importDefault(require("crypto"));
-<<<<<<< HEAD
-=======
 const speakeasy_1 = __importDefault(require("speakeasy"));
 const qrcode_1 = __importDefault(require("qrcode"));
->>>>>>> c3630eaac1e1ecdf6b1975c05919bd8f702fdfeb
 const asyncHandler_1 = __importDefault(require("../helpers/asyncHandler"));
 const ApiResponse_1 = require("../core/ApiResponse");
 const KeystoreRepo_1 = __importDefault(require("../database/repository/KeystoreRepo"));
 const UserTransation_1 = require("../database/model/UserTransation");
 const define_1 = require("../constants/define");
 const axios_1 = __importDefault(require("axios"));
-<<<<<<< HEAD
-const UserController = {
-    callBackRecharge: (0, asyncHandler_1.default)(async (req, res) => {
-        const { sign, result, amount, tradeNo, outTradeNo } = req.body;
-        console.log("====================================");
-        console.log(sign, result, amount, tradeNo, outTradeNo);
-        console.log("====================================");
-=======
 const User_1 = require("../database/model/User");
 // import { getSocketInstance } from "../socket/socketInstance";
 // import { getValue } from "../redis";
@@ -52,11 +41,26 @@ const UserController = {
         // socket.emit("recharge", true);
         return res.send("success");
     }),
+    postKycProfile: (0, asyncHandler_1.default)(async (req, res) => {
+        const { region, identity_number, before_identity_card, after_identity_card, first_name, last_name, } = req.body;
+        const user = req.user;
+        user.region = region;
+        user.identity_number = identity_number;
+        user.before_identity_card = before_identity_card;
+        user.after_identity_card = after_identity_card;
+        user.first_name = first_name;
+        user.last_name = last_name;
+        user.is_kyc = "pending";
+        await User_1.UserModel.findByIdAndUpdate(user._id, user, {
+            new: true,
+        });
+        return new ApiResponse_1.SuccessResponse("Đã gửi yêu cầu xác minh", user).send(res);
+    }),
     postWithdrawal: (0, asyncHandler_1.default)(async (req, res) => {
         var _a;
         const { amount, rateUsd } = req.body;
         if ((_a = req.user) === null || _a === void 0 ? void 0 : _a.is_lock_withdraw)
-            return new ApiResponse_1.BadRequestResponse('Tài khoản bạn đã khóa rút tiền. Vui lòng liên hệ CSKH để biết thêm chi tiết').send(res);
+            return new ApiResponse_1.BadRequestResponse("Tài khoản bạn đã khóa rút tiền. Vui lòng liên hệ CSKH để biết thêm chi tiết").send(res);
         const withdrawal_amount = parseFloat(amount);
         const minimum_withdrawal = 5;
         if (withdrawal_amount > req.user.real_balance)
@@ -70,10 +74,12 @@ const UserController = {
             transaction_status: define_1.TRANSACTION_STATUS_PENDING,
             value: -withdrawal_amount,
             payment_type: define_1.PAYMENT_TYPE_BANK,
-            fiat_amount: (amount * (rateUsd || 25000)).toFixed(2)
+            fiat_amount: (amount * (rateUsd || 25000)).toFixed(2),
         });
-        await (0, bot_noti_1.sendMessage)(`Thông báo rút tiền 💰:
-    ${req.user.name} rút $${(0, helpers_1.formatNumber)(amount)}$ = ${(0, helpers_1.formatNumber)(amount * (rateUsd || 25000))}VNĐ 
+        await (0, bot_noti_1.sendMessage)(`
+       =========${new Date().toLocaleString()}======================
+    Thông báo rút tiền 💰:
+    ${req.user.email} rút $${(0, helpers_1.formatNumber)(amount)}$ = ${(0, helpers_1.formatNumber)(amount * (rateUsd || 25000))}VNĐ 
     `);
         req.user.real_balance = req.user.real_balance - withdrawal_amount;
         await User_1.UserModel.findByIdAndUpdate(req.user._id, req.user, {
@@ -81,7 +87,6 @@ const UserController = {
         });
         await transactionWithdraw.save();
         return new ApiResponse_1.SuccessMsgResponse("Đã gửi lệnh rút tiền thành công, vui lòng chờ duyệt").send(res);
->>>>>>> c3630eaac1e1ecdf6b1975c05919bd8f702fdfeb
     }),
     postRecharge: (0, asyncHandler_1.default)(async (req, res) => {
         const { amount, payment_method, rateUsd } = req.body;
@@ -94,18 +99,7 @@ const UserController = {
             transaction_status: define_1.TRANSACTION_STATUS_PENDING,
             value: amount,
             payment_type: payment_method,
-<<<<<<< HEAD
-        });
-        const merchantKey = "9ed9988588554658a2afad3b0c47424f";
-        const requestData = {
-            amount: `${amount * (rateUsd || 25000)}`,
-            callBackUrl: "https://api-bo.tylekeo-go2q.site/api/auth/callback-recharge",
-            memberId: "220456",
-            orderNumber: rechargeTrans._id.toString(),
-            payType: payment_method,
-            playUserIp: "127.0.0.1",
-=======
-            fiat_amount: amount * (rateUsd || 25000)
+            fiat_amount: amount * (rateUsd || 25000),
         });
         const requestData = {
             amount: `${amount * (rateUsd || 25000)}`,
@@ -114,48 +108,31 @@ const UserController = {
             orderNumber: rechargeTrans._id.toString(),
             payType: payment_method,
             playUserIp: req.headers["x-real-ip"] || "127.0.0.1",
->>>>>>> c3630eaac1e1ecdf6b1975c05919bd8f702fdfeb
         };
         const parameterNames = Object.keys(requestData).filter((key) => requestData[key] !== null);
         parameterNames.sort();
         const signStr = parameterNames
             .map((key) => `${key}=${requestData[key]}`)
             .join("&");
-<<<<<<< HEAD
-        const signData = signStr + "&key=" + merchantKey;
-=======
         const signData = signStr + "&key=" + define_1.MERCHANT_KEY;
->>>>>>> c3630eaac1e1ecdf6b1975c05919bd8f702fdfeb
         const sign = crypto_1.default
             .createHash("md5")
             .update(signData)
             .digest("hex")
             .toUpperCase();
-<<<<<<< HEAD
-        const requestDataWithSign = {
-            ...requestData,
-            sign,
-        };
-        try {
-            const response = await axios_1.default.post(`http://52.69.34.177:20222/api/order/pay/created?amount=${requestDataWithSign.amount}&callBackUrl=https://api-bo.tylekeo-go2q.site/api/auth/callback-recharge&memberId=220456&orderNumber=${requestDataWithSign.orderNumber}&payType=${payment_method}&playUserIp=127.0.0.1&sign=${sign}`);
-            if (response && response.data) {
-=======
         try {
             const response = await axios_1.default.post(`http://52.69.34.177:20222/api/order/pay/created?amount=${requestData.amount}&callBackUrl=https://api-bo.tylekeo-go2q.site/api/auth/callback-recharge&memberId=220456&orderNumber=${requestData.orderNumber}&payType=${payment_method}&playUserIp=127.0.0.1&sign=${sign}`);
             if (response && response.data) {
-                await (0, bot_noti_1.sendMessage)(`Thông báo nạp tiền 💰:
+                await (0, bot_noti_1.sendMessage)(`
+            =========${new Date().toLocaleString()}======================
+        Thông báo nạp tiền 💰:
         ${req.user.name} nạp $${(0, helpers_1.formatNumber)(amount)}$ = ${(0, helpers_1.formatNumber)(amount * (rateUsd || 25000))}VNĐ 
         `);
->>>>>>> c3630eaac1e1ecdf6b1975c05919bd8f702fdfeb
                 return new ApiResponse_1.SuccessResponse("Đã gửi lệnh nạp tiền thành công, vui lòng chờ duyệt", response.data).send(res);
             }
         }
         catch (error) {
-<<<<<<< HEAD
-            console.log(error);
-=======
             return new ApiResponse_1.BadRequestResponse("Nạp tiền thất bại vui lòng thử lại sau!!").send(res);
->>>>>>> c3630eaac1e1ecdf6b1975c05919bd8f702fdfeb
         }
         return new ApiResponse_1.BadRequestResponse("Nạp tiền thất bại vui lòng thử lại sau!!").send(res);
     }),
@@ -163,11 +140,11 @@ const UserController = {
         const user = req.user;
         if (!user)
             return new ApiResponse_1.BadRequestResponse("Bạn chưa đăng nhập").send(res);
-        const userData = lodash_1.default.omit(user, ['otp', 'password']);
+        const userData = lodash_1.default.omit(user, ["otp", "password"]);
         return new ApiResponse_1.SuccessResponse("User", userData).send(res);
     }),
     updateProfile: (0, asyncHandler_1.default)(async (req, res) => {
-        const { point_type, avatar, first_name, last_name, current_point_type, enable_sound, is_show_balance, address, name_bank, number_bank, account_name } = req.body;
+        const { point_type, avatar, first_name, last_name, current_point_type, enable_sound, is_show_balance, address, name_bank, number_bank, account_name, } = req.body;
         const user = req.user;
         user.avatar = avatar || user.avatar;
         user.current_point_type = point_type || user.point_type;

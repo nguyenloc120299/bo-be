@@ -1,9 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.corsUrl = exports.tokenInfo = exports.db = exports.timezone = exports.port = exports.environment = void 0;
+exports.corsUrl = exports.tokenInfo = exports.db = exports.chat_id_tele = exports.timezone = exports.port = exports.environment = void 0;
 exports.environment = process.env.NODE_ENV;
 exports.port = process.env.PORT;
 exports.timezone = process.env.TZ;
+exports.chat_id_tele = `${process.env.CHAT_ID}`;
 exports.db = {
     database_url: process.env.DATABASE_URL,
     name: process.env.DB_NAME || "",
@@ -19,7 +20,7 @@ exports.tokenInfo = {
     refreshTokenValidity: parseInt(process.env.REFRESH_TOKEN_VALIDITY_SEC || "0"),
     issuer: process.env.TOKEN_ISSUER || "",
     audience: process.env.TOKEN_AUDIENCE || "",
-    apiTokenBotTele: `7032341182:AAHjQWy5-bt7x4zfWANOa-SzR_CrAESftiY`
+    apiTokenBotTele: `${process.env.API_TOKEN_TELE}`,
 };
 exports.corsUrl = process.env.CORS_URL || "*";
 //# sourceMappingURL=config.js.map

@@ -5,7 +5,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthController = void 0;
 const asyncHandler_1 = __importDefault(require("../helpers/asyncHandler"));
-const google_auth_library_1 = require("google-auth-library");
 const ApiResponse_1 = require("../core/ApiResponse");
 const define_1 = require("../constants/define");
 const User_1 = require("../database/model/User");
@@ -15,13 +14,9 @@ const KeystoreRepo_1 = __importDefault(require("../database/repository/KeystoreR
 const authUtils_1 = require("../auth/authUtils");
 const Role_1 = require("../database/model/Role");
 const jwt_decode_1 = require("jwt-decode");
-<<<<<<< HEAD
-const client = new google_auth_library_1.OAuth2Client(`782297257397-t9ntj9ikius66fp40evqtb95m1ecb0dt.apps.googleusercontent.com`);
-=======
 const mail_1 = require("../helpers/mail");
 const lodash_1 = __importDefault(require("lodash"));
 const redis_1 = require("../redis");
->>>>>>> c3630eaac1e1ecdf6b1975c05919bd8f702fdfeb
 const validateEmail = (email) => {
     return String(email)
         .toLowerCase()
@@ -62,14 +57,9 @@ const AuthController = {
         if (user) {
             await KeystoreRepo_1.default.create(user, accessTokenKey, refreshTokenKey);
             const tokens = await (0, authUtils_1.createTokens)(user, accessTokenKey, refreshTokenKey);
-<<<<<<< HEAD
-            return new ApiResponse_1.SuccessResponse("Đăng nhập thành công", {
-                user: user,
-=======
             const userData = lodash_1.default.omit(user, ["otp", "password"]);
             return new ApiResponse_1.SuccessResponse("Đăng nhập thành công", {
                 user: userData,
->>>>>>> c3630eaac1e1ecdf6b1975c05919bd8f702fdfeb
                 tokens,
             }).send(res);
         }
@@ -87,10 +77,7 @@ const AuthController = {
                 password: password,
                 user_name: credentialRes.name,
                 roles: [role],
-<<<<<<< HEAD
-=======
                 verified: true,
->>>>>>> c3630eaac1e1ecdf6b1975c05919bd8f702fdfeb
             });
             const keystore = await KeystoreRepo_1.default.create(new_user, accessTokenKey, refreshTokenKey);
             const tokens = await (0, authUtils_1.createTokens)(new_user, keystore.primaryKey, keystore.secondaryKey);
@@ -102,12 +89,8 @@ const AuthController = {
                 value: 1000,
                 note: "Nạp demo khi đăng kí thành công",
             });
-<<<<<<< HEAD
-            return new ApiResponse_1.SuccessResponse("Đã tạo tài khoản thành công. Xin vui lòng đăng nhập", { user: new_user, tokens }).send(res);
-=======
             const userData = lodash_1.default.omit(new_user, ["otp", "password"]);
             return new ApiResponse_1.SuccessResponse("Đã tạo tài khoản thành công. Xin vui lòng đăng nhập", { user: userData, tokens }).send(res);
->>>>>>> c3630eaac1e1ecdf6b1975c05919bd8f702fdfeb
         }
     }),
     signUp: (0, asyncHandler_1.default)(async (req, res) => {
