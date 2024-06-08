@@ -27,7 +27,7 @@ router.get("/price-usd", (0, asyncHandler_1.default)(async (req, res) => {
     const data = await (0, redis_1.getValue)("price_usd");
     if (!data)
         return new ApiResponse_1.BadRequestResponse("Có lỗi xảy ra").send(res);
-    return new ApiResponse_1.SuccessResponse("ok", parseFloat(data).toFixed(2)).send(res);
+    return new ApiResponse_1.SuccessResponse("ok", parseFloat(data).toFixed(0)).send(res);
 }));
 router.post("/upload", upload.single("file"), (0, asyncHandler_1.default)(async (req, res) => {
     try {

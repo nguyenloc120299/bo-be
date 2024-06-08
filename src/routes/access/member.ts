@@ -34,7 +34,7 @@ router.get(
   asyncHandler(async (req: RoleRequest, res) => {
     const data = await getValue("price_usd");
     if (!data) return new BadRequestResponse("Có lỗi xảy ra").send(res);
-    return new SuccessResponse("ok", parseFloat(data).toFixed(2)).send(res);
+    return new SuccessResponse("ok", parseFloat(data).toFixed(0)).send(res);
   })
 );
 

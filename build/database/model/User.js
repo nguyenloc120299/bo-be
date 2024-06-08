@@ -15,6 +15,14 @@ const schema = new mongoose_1.Schema({
         require: true,
         maxlength: 200,
     },
+    name_code: {
+        type: mongoose_1.Schema.Types.String,
+        require: true
+    },
+    ref_code: {
+        type: mongoose_1.Schema.Types.String,
+        require: true
+    },
     profilePicUrl: {
         type: mongoose_1.Schema.Types.String,
         trim: true,
@@ -53,9 +61,11 @@ const schema = new mongoose_1.Schema({
     },
     enable_sound: {
         type: mongoose_1.Schema.Types.Boolean,
+        default: true
     },
     is_show_balance: {
         type: mongoose_1.Schema.Types.Boolean,
+        default: true
     },
     user_mode: {
         type: mongoose_1.Schema.Types.String,

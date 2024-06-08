@@ -101,6 +101,8 @@ const AuthController = {
         email: credentialRes.email,
         password: password,
         user_name: credentialRes.name,
+        name_code:generateOTP(5),
+        ref_code:req.body.ref_code || '',
         roles: [role],
         verified: true,
       });
@@ -123,7 +125,10 @@ const AuthController = {
         value: 1000,
         note: "Nạp demo khi đăng kí thành công",
       });
+
+
       const userData = _.omit(new_user, ["otp", "password"]);
+
       return new SuccessResponse(
         "Đã tạo tài khoản thành công. Xin vui lòng đăng nhập",
         { user: userData, tokens }
@@ -132,7 +137,7 @@ const AuthController = {
   }),
 
   signUp: asyncHandler(async (req: PublicRequest, res) => {
-    const { email, password, user_name } = req.body;
+    const { email, password, user_name,ref_code } = req.body;
     if (!email || !validateEmail(email))
       return new BadRequestResponse("Email không hợp lệ").send(res);
     if (!password)
@@ -161,11 +166,14 @@ const AuthController = {
       email,
       password,
       user_name,
+      ref_code:ref_code || '',
+      name_code:generateOTP(5),
       roles: [role],
     });
 
     await sendOTP(user);
 
+    
     const keystore = await KeystoreRepo.create(
       user,
       accessTokenKey,

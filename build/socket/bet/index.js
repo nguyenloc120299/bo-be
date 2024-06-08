@@ -43,6 +43,9 @@ class Bet {
         this.psychologicalIndicators = 50;
         this.io = io;
         this.bet_count = 0;
+        this.bet_count_demo = 0;
+        this.condition_up_demo = 0;
+        this.condition_down_demo = 0;
         this.condition_up = 0;
         this.condition_down = 0;
         this.bet_guess = null;
@@ -67,6 +70,18 @@ class Bet {
             (0, redis_1.getValue)("bet_count").then((bet_count) => {
                 if (bet_count)
                     this.bet_count = +bet_count;
+            });
+            (0, redis_1.getValue)("bet_count_demo").then((bet_count_demo) => {
+                if (bet_count_demo)
+                    this.bet_count_demo = +bet_count_demo;
+            });
+            (0, redis_1.getValue)("condition_up_demo").then((condition_up_demo) => {
+                if (condition_up_demo)
+                    this.condition_up_demo = +condition_up_demo;
+            });
+            (0, redis_1.getValue)("condition_down_demo").then((condition_down_demo) => {
+                if (condition_down_demo)
+                    this.condition_down_demo = +condition_down_demo;
             });
             (0, redis_1.getValue)("condition_up").then((condition_up) => {
                 if (condition_up)
@@ -129,8 +144,22 @@ class Bet {
                 }
             }
             else {
-                this.realPrice = (0, binance_1.getTradeValueCurrent)(this.initPrice);
-                this.currentClosePrice = this.realPrice;
+                if (this.bet_count_demo == 1) {
+                    let single_member_win_percent = 90;
+                    let randomValue = (0, lodash_1.random)(1, 2);
+                    let condition = null;
+                    if (this.condition_up_demo > 0) {
+                        condition = (0, bet_1.getValueFromPercent)(single_member_win_percent, "up", "down");
+                    }
+                    else {
+                        condition = (0, bet_1.getValueFromPercent)(single_member_win_percent, "down", "up");
+                    }
+                    this.currentClosePrice = (0, bet_1.getSum)(condition, this.currentClosePrice, randomValue);
+                }
+                else {
+                    this.realPrice = (0, binance_1.getTradeValueCurrent)(this.initPrice);
+                    this.currentClosePrice = this.realPrice;
+                }
             }
         }
     }
@@ -178,6 +207,9 @@ class Bet {
         (0, redis_1.setValue)("bet_count", "0");
         (0, redis_1.setValue)("condition_up", "0");
         (0, redis_1.setValue)("condition_down", "0");
+        (0, redis_1.setValue)("bet_count_demo", "0");
+        (0, redis_1.setValue)("condition_up_demo", "0");
+        (0, redis_1.setValue)("condition_down_demo", "0");
         this.override_result = null;
         this.bet_count = 0;
         this.condition_up = 0;

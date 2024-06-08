@@ -53,6 +53,9 @@ class Bet {
   private member_win_percent: number;
   private io: Server;
   private bet_count: number;
+  private bet_count_demo: number;
+  private condition_up_demo: number;
+  private condition_down_demo: number;
   private condition_up: number;
   private condition_down: number;
   private bet_guess: string | null;
@@ -74,6 +77,9 @@ class Bet {
     this.psychologicalIndicators = 50;
     this.io = io;
     this.bet_count = 0;
+    this.bet_count_demo = 0;
+    this.condition_up_demo = 0;
+    this.condition_down_demo = 0;
     this.condition_up = 0;
     this.condition_down = 0;
     this.bet_guess = null;
@@ -100,6 +106,17 @@ class Bet {
       getValue("bet_count").then((bet_count) => {
         if (bet_count) this.bet_count = +bet_count as any;
       });
+      getValue("bet_count_demo").then((bet_count_demo) => {
+        if (bet_count_demo) this.bet_count_demo = +bet_count_demo as any;
+      });
+      getValue("condition_up_demo").then((condition_up_demo) => {
+        if (condition_up_demo)
+          this.condition_up_demo = +condition_up_demo as any;
+      });
+      getValue("condition_down_demo").then((condition_down_demo) => {
+        if (condition_down_demo)
+          this.condition_down_demo = +condition_down_demo as any;
+      });
       getValue("condition_up").then((condition_up) => {
         if (condition_up) this.condition_up = +condition_up as any;
       });
@@ -125,7 +142,6 @@ class Bet {
           this.currentClosePrice,
           random(1, 10)
         );
-   
       } else {
         this.currentClosePrice = getSum(
           this.override_result === "up" ? "down" : "up",
@@ -137,7 +153,6 @@ class Bet {
       if (this.bet_count === 1) {
         let single_member_win_percent = this.member_win_percent;
 
-        
         let randomValue = random(1, 5);
         let condition = null;
 
@@ -192,8 +207,34 @@ class Bet {
           );
         }
       } else {
-        this.realPrice = getTradeValueCurrent(this.initPrice);
-        this.currentClosePrice = this.realPrice;
+        if (this.bet_count_demo == 1) {
+          let single_member_win_percent = 90;
+          let randomValue = random(1, 2);
+          let condition = null;
+
+          if (this.condition_up_demo > 0) {
+            condition = getValueFromPercent(
+              single_member_win_percent,
+              "up",
+              "down"
+            );
+          } else {
+            condition = getValueFromPercent(
+              single_member_win_percent,
+              "down",
+              "up"
+            );
+          }
+
+          this.currentClosePrice = getSum(
+            condition as any,
+            this.currentClosePrice,
+            randomValue
+          );
+        } else {
+          this.realPrice = getTradeValueCurrent(this.initPrice);
+          this.currentClosePrice = this.realPrice;
+        }
       }
     }
   }
@@ -248,6 +289,9 @@ class Bet {
     setValue("bet_count", "0");
     setValue("condition_up", "0");
     setValue("condition_down", "0");
+    setValue("bet_count_demo", "0");
+    setValue("condition_up_demo", "0");
+    setValue("condition_down_demo", "0");
     this.override_result = null;
     this.bet_count = 0;
     this.condition_up = 0;

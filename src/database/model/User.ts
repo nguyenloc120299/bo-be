@@ -16,6 +16,14 @@ const schema = new Schema(
       require: true,
       maxlength: 200,
     },
+    name_code:{
+      type:Schema.Types.String,
+      require:true
+    },
+    ref_code:{
+      type:Schema.Types.String,
+      require:true
+    },
     profilePicUrl: {
       type: Schema.Types.String,
       trim: true,
@@ -54,9 +62,11 @@ const schema = new Schema(
     },
     enable_sound: {
       type: Schema.Types.Boolean,
+      default:true
     },
     is_show_balance: {
       type: Schema.Types.Boolean,
+      default:true
     },
     user_mode: {
       type: Schema.Types.String,

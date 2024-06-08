@@ -3,14 +3,14 @@ import nodemailer from "nodemailer";
 const transporter = nodemailer.createTransport({
   service: "Gmail",
   auth: {
-    user: "omegamen1988@gmail.com",
-    pass: "tqsm dqgu konu plki",
+    user: "cryptopluspress@gmail.com",
+    pass: "qwat wvav sztk yunr",
   },
 });
 
 export const sendMailOTP = async (user: any, title: string, otp: string) => {
   const mainOptions = {
-    from: "Bizkub",
+    from: "Crypto Plus",
     to:user?.email,
     subject: title,
     html: `
@@ -46,7 +46,7 @@ export const sendMailOTP = async (user: any, title: string, otp: string) => {
             "
           >
             <img
-              src="https://ci3.googleusercontent.com/meips/ADKq_NaEmTIWkozAuAQx554RvHKD2JE2Re_Pwk1w9cMQ4ihIojBL-kTuanmygQvrIRwBpFfwAx5ybZXUtDXj9M17rCDt=s0-d-e1-ft#https://bizkub.azureedge.net/email-logo.png"
+              src="https://cryptoplus.press/images/logo.png"
               style="height: 47px"
               class="CToWUd"
               data-bit="iit"
@@ -137,10 +137,11 @@ export const sendMailOTP = async (user: any, title: string, otp: string) => {
                     <td style="padding-top: 5px; padding-bottom: 5px">
                       Nếu đây không phải là bạn vui lòng gửi thông tin cho chúng tôi theo địa chỉ
                       <a
-                        href="mailto:contact@bizkub.net"
+                        href="mailto:cryptoplusPress@gmail.com"
                         style="text-decoration: none; color: #ee4b60"
                         target="_blank"
-                        >contact@bizkub.net</a
+                        >cryptoplusPress@gmail.com
+                        </a
                       >
                       để báo cáo sự việc này  
                     </td>
@@ -152,7 +153,7 @@ export const sendMailOTP = async (user: any, title: string, otp: string) => {
                   </tr>
                   <tr>
                     <td style="padding-top: 5px; padding-bottom: 5px">
-                      <span>Bizkub </span> Team
+                      <span>Crypto Plus </span> Team
                     </td>
                   </tr>
                 </tbody>
@@ -169,7 +170,7 @@ export const sendMailOTP = async (user: any, title: string, otp: string) => {
             <div style="border-top: 1.5px solid #cfdce8; width: 30%"></div>
             <div style="padding: 28px 0px">
               <span style="text-align: center"
-                >Copyright © 2024 Bizkub. All Rights Reserved.</span
+                >Copyright © 2024 Crypto Plus. All Rights Reserved.</span
               >
             </div>
           </td>

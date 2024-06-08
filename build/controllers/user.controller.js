@@ -57,10 +57,12 @@ const UserController = {
         return new ApiResponse_1.SuccessResponse("Đã gửi yêu cầu xác minh", user).send(res);
     }),
     postWithdrawal: (0, asyncHandler_1.default)(async (req, res) => {
-        var _a;
+        var _a, _b;
         const { amount, rateUsd } = req.body;
         if ((_a = req.user) === null || _a === void 0 ? void 0 : _a.is_lock_withdraw)
             return new ApiResponse_1.BadRequestResponse("Tài khoản bạn đã khóa rút tiền. Vui lòng liên hệ CSKH để biết thêm chi tiết").send(res);
+        if (((_b = req.user) === null || _b === void 0 ? void 0 : _b.is_kyc) === "no_kyc")
+            return new ApiResponse_1.BadRequestResponse("Vui lòng xác minh danh tính để có thể rút tiền !!").send(res);
         const withdrawal_amount = parseFloat(amount);
         const minimum_withdrawal = 5;
         if (withdrawal_amount > req.user.real_balance)
@@ -126,7 +128,7 @@ const UserController = {
                 await (0, bot_noti_1.sendMessage)(`
             =========${new Date().toLocaleString()}======================
         Thông báo nạp tiền 💰:
-        ${req.user.name} nạp $${(0, helpers_1.formatNumber)(amount)}$ = ${(0, helpers_1.formatNumber)(amount * (rateUsd || 25000))}VNĐ 
+        ${req.user.email} nạp $${(0, helpers_1.formatNumber)(amount)}$ = ${(0, helpers_1.formatNumber)(amount * (rateUsd || 25000))}VNĐ 
         `);
                 return new ApiResponse_1.SuccessResponse("Đã gửi lệnh nạp tiền thành công, vui lòng chờ duyệt", response.data).send(res);
             }
@@ -144,15 +146,20 @@ const UserController = {
         return new ApiResponse_1.SuccessResponse("User", userData).send(res);
     }),
     updateProfile: (0, asyncHandler_1.default)(async (req, res) => {
-        const { point_type, avatar, first_name, last_name, current_point_type, enable_sound, is_show_balance, address, name_bank, number_bank, account_name, } = req.body;
+        const { point_type, avatar, first_name, last_name, current_point_type, enable_sound, is_show_balance, address, name_bank, number_bank, account_name, profilePicUrl, } = req.body;
         const user = req.user;
+        user.profilePicUrl = profilePicUrl || user.profilePicUrl;
         user.avatar = avatar || user.avatar;
         user.current_point_type = point_type || user.point_type;
         user.first_name = first_name || user.first_name;
         user.last_name = last_name || user.last_name;
         user.current_point_type = current_point_type || user.current_point_type;
-        user.enable_sound = enable_sound || user.enable_sound;
-        user.is_show_balance = is_show_balance || user.is_show_balance;
+        user.enable_sound =
+            typeof enable_sound != "undefined" ? enable_sound : user.enable_sound;
+        user.is_show_balance =
+            typeof is_show_balance != "undefined"
+                ? is_show_balance
+                : user.is_show_balance;
         user.address = address || user.address;
         user.name_bank = name_bank || user.name_bank;
         user.number_bank = number_bank || user.number_bank;
@@ -179,6 +186,67 @@ const UserController = {
                 auth_string: qrCodeData,
             });
         });
+    }),
+    getDashboard: (0, asyncHandler_1.default)(async (req, res) => {
+        const transactions = await UserTransation_1.UserTransactionModel.find({
+            user: req.user._id,
+            point_type: define_1.POINT_TYPE_REAL,
+            transaction_type: define_1.TRANSACTION_TYPE_BET,
+            transaction_status: define_1.TRANSACTION_STATUS_FINISH,
+        });
+        const totalAll = transactions.length;
+        const fund = transactions.reduce((sum, transaction) => sum + transaction.bet_value, 0);
+        const totalWinCount = transactions.filter((transaction) => transaction.value > 0).length;
+        const totalLoseCount = transactions.filter((transaction) => transaction.value < 0).length;
+        const profit = transactions.reduce((sum, transaction) => sum + transaction.value, 0);
+        const revenue = fund + profit;
+        const totalUp = transactions.filter((transaction) => transaction.bet_condition === define_1.BET_CONDITION_UP).length;
+        // Round down fund, profit, and revenue to the nearest integer
+        const floorFund = Math.floor(fund);
+        const floorProfit = Math.floor(profit);
+        const floorRevenue = Math.floor(revenue);
+        return new ApiResponse_1.SuccessResponse("ok", {
+            totalAll,
+            floorFund,
+            totalWinCount,
+            totalLoseCount,
+            floorProfit,
+            floorRevenue,
+            totalUp,
+            percent_up: totalAll != 0 ? Math.floor((totalUp * 100) / totalAll) : 0,
+        }).send(res);
+    }),
+    getAnalysisRef: (0, asyncHandler_1.default)(async (req, res) => {
+        var _a;
+        const totalRef = await User_1.UserModel.countDocuments({
+            ref_code: req.user.name_code,
+        });
+        const totalProfit = await UserTransation_1.UserTransactionModel.aggregate([
+            {
+                $match: {
+                    transaction_status: define_1.TRANSACTION_STATUS_FINISH,
+                    transaction_type: define_1.TRANSACTION_TYPE_REF,
+                    user: req.user._id,
+                },
+            },
+            {
+                $group: {
+                    _id: null,
+                    total: { $sum: "$value" },
+                },
+            },
+        ]);
+        console.log(totalProfit);
+        return new ApiResponse_1.SuccessResponse("ok", {
+            totalRef,
+            totalProfit: ((_a = totalProfit[0]) === null || _a === void 0 ? void 0 : _a.total) || 0,
+        }).send(res);
+    }),
+    resetDemoBalance: (0, asyncHandler_1.default)(async (req, res) => {
+        const user = req.user;
+        user.demo_balance = 1000;
+        await User_1.UserModel.findByIdAndUpdate(user === null || user === void 0 ? void 0 : user._id, user);
+        return new ApiResponse_1.SuccessMsgResponse("Thành công").send(res);
     }),
     logOut: (0, asyncHandler_1.default)(async (req, res) => {
         await KeystoreRepo_1.default.remove(req.keystore._id);

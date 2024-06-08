@@ -18,6 +18,7 @@ import {
   TRANSACTION_STATUS_PROCESSING,
   TRANSACTION_TYPE_BET,
   TRANSACTION_TYPE_RECHARGE,
+  TRANSACTION_TYPE_REF,
   TRANSACTION_TYPE_WITHDRAWAL,
 } from "../../constants/define";
 import mongoose, { isObjectIdOrHexString } from "mongoose";
@@ -174,6 +175,33 @@ const AdminControllers = {
         },
       },
       {
+        $lookup: {
+          from: "userTransactions",
+          let: { userId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$user", "$$userId"] },
+                    { $eq: ["$point_type", POINT_TYPE_REAL] },
+                    { $eq: ["$transaction_status", TRANSACTION_STATUS_FINISH] },
+                    { $eq: ["$transaction_type", TRANSACTION_TYPE_REF] },
+                  ],
+                },
+              },
+            },
+            {
+              $group: {
+                _id: "$user",
+                totalValue: { $sum: "$value" },
+              },
+            },
+          ],
+          as: "refProfit",
+        },
+      },
+      {
         $sort: { createdAt: -1 },
       },
       {
@@ -199,6 +227,7 @@ const AdminControllers = {
       const transactionStat = user.transactionStats[0];
       const transactionStat1 = user.transactionStats1[0];
       const transactionStat2 = user.transactionStats2[0];
+      const refProfit = user?.refProfit[0];
       return {
         ...user,
         countTotalBet: transactionStat ? transactionStat.totalBet : 0,
@@ -207,6 +236,7 @@ const AdminControllers = {
         totalValue: transactionStat ? transactionStat.totalValue : 0,
         totalDeposit: transactionStat1 ? transactionStat1.totalValue : 0,
         totalWithdraw: transactionStat2 ? transactionStat2.totalValue : 0,
+        totalProfitRef: refProfit ? refProfit?.totalValue : 0,
       };
     });
     return new SuccessResponse("ok", {
@@ -380,7 +410,7 @@ const AdminControllers = {
     const totalValueDeposit = data[0]?.totalValue;
     const totalValueFiat = data[0]?.totalValueFiat;
     const totalValueWithdraw = data1[0]?.totalValue;
-    const totalValueFiatWithdraw = data[0]?.totalValueFiat;
+    const totalValueFiatWithdraw = data1[0]?.totalValueFiat;
 
     return new SuccessResponse("ok", {
       totalValueDeposit,

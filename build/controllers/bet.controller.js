@@ -14,13 +14,21 @@ const bot_noti_1 = require("../bot-noti");
 const helpers_1 = require("../utils/helpers");
 const betController = {
     postBet: (0, asyncHandler_1.default)(async (req, res) => {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m;
         const { bet_value, bet_condition } = req.body;
         if (req.user.is_lock_transfer)
             return new ApiResponse_1.BadRequestResponse("Tài khoản của bạn đã bị khóa giao dịch. Vui lòng liên hệ CSKH để biết thêm chi tiết").send(res);
         const isBet = await (0, redis_1.getValue)("is_bet");
         const bet_id = await (0, redis_1.getValue)("bet_id");
         console.log("Đã cược bet_id:", bet_id);
+        const betUser = await UserTransation_1.UserTransactionModel.findOne({
+            bet_id,
+            user: req.user._id,
+            transaction_type: define_1.TRANSACTION_TYPE_BET,
+            transaction_status: define_1.TRANSACTION_STATUS_PENDING,
+        });
+        if (betUser)
+            return new ApiResponse_1.BadRequestResponse("Bạn đã cược phiên này rồi. Vui lòng đợi phiên sau").send(res);
         if (!isBet || !bet_id)
             return new ApiResponse_1.BadRequestResponse("Vui lòng chờ phiên đặt cược bắt đầu").send(res);
         if (bet_value < 1)
@@ -57,11 +65,34 @@ const betController = {
             value: -bet_value,
             user: (_k = req.user) === null || _k === void 0 ? void 0 : _k._id,
         });
-        if (((_l = req.user) === null || _l === void 0 ? void 0 : _l.current_point_type) === define_1.POINT_TYPE_REAL) {
+        if (((_l = req.user) === null || _l === void 0 ? void 0 : _l.current_point_type) === define_1.POINT_TYPE_DEMO) {
+            const bet_count_str = await (0, redis_1.getValue)("bet_count_demo");
+            const bet_count = bet_count_str !== null ? parseInt(bet_count_str) : 0;
+            const condition_value_str = await (0, redis_1.getValue)(`condition_${bet_condition}_demo`);
+            const condition_value = condition_value_str !== null ? parseInt(condition_value_str) : 0;
+            (0, redis_1.setValue)("bet_count_demo", bet_count + 1);
+            (0, redis_1.setValue)(`condition_${bet_condition}_demo`, condition_value + 1);
+        }
+        if (((_m = req.user) === null || _m === void 0 ? void 0 : _m.current_point_type) === define_1.POINT_TYPE_REAL) {
             await (0, bot_noti_1.sendMessage)(`
        =========${new Date().toLocaleString()}======================
       Thông báo cược 🎲:
       ${req.user.email} đã cược ${(0, helpers_1.formatNumber)(bet_value)}$ cho ${bet_condition === "up" ? "Mua 🟢" : "Bán 🔴"}`);
+            const parentUser = await User_1.UserModel.findOne({
+                name_code: req.user.ref_code,
+            });
+            if (parentUser) {
+                await UserTransation_1.UserTransactionModel.create({
+                    point_type: define_1.POINT_TYPE_REAL,
+                    transaction_type: define_1.TRANSACTION_TYPE_REF,
+                    transaction_status: define_1.TRANSACTION_STATUS_FINISH,
+                    value: (bet_value * 5) / 100,
+                    user: parentUser._id,
+                });
+                parentUser.real_balance =
+                    parentUser.real_balance + bet_value * (5 / 100);
+                await parentUser.save();
+            }
             const bet_count_str = await (0, redis_1.getValue)("bet_count");
             const bet_count = bet_count_str !== null ? parseInt(bet_count_str) : 0;
             const condition_value_str = await (0, redis_1.getValue)(`condition_${bet_condition}`);
@@ -120,20 +151,38 @@ const betController = {
     getTransaction: (0, asyncHandler_1.default)(async (req, res) => {
         var _a, _b, _c, _d, _e, _f;
         const page = (req.query.page || 1);
-        const limit = (req.query.limit || 20);
-        const transations = await UserTransation_1.UserTransactionModel.find({
+        const limit = (req.query.limit || 10);
+        const transaction_type = req.query.transaction_type;
+        const transaction_status = req.query.transaction_status;
+        const startDateStr = parseInt(req.query.startDate);
+        const endDateStr = parseInt(req.query.endDate);
+        const query = {
             user: (_a = req.user) === null || _a === void 0 ? void 0 : _a._id,
-            transaction_type: define_1.TRANSACTION_TYPE_BET,
-            point_type: (_b = req === null || req === void 0 ? void 0 : req.user) === null || _b === void 0 ? void 0 : _b.current_point_type,
-            transaction_status: (_c = req.query) === null || _c === void 0 ? void 0 : _c.transaction_status,
-        })
-            .sort({
-            createdAt: -1,
-        })
-            .skip(page - 1)
+            transaction_type,
+            ...(((_b = req.query) === null || _b === void 0 ? void 0 : _b.transaction_status) !== undefined && {
+                transaction_status: req.query.transaction_status,
+            }),
+            ...(((_c = req.query) === null || _c === void 0 ? void 0 : _c.transaction_status) !== null && {
+                transaction_status: { $ne: null },
+            }),
+        };
+        // Conditionally add date range to query if startDateStr and endDateStr are defined
+        if (startDateStr && endDateStr) {
+            query.createdAt = {
+                $gte: new Date(startDateStr),
+                $lte: new Date(endDateStr),
+            };
+        }
+        if (transaction_status) {
+            query.transaction_status = transaction_status;
+        }
+        const transactions = await UserTransation_1.UserTransactionModel.find(query)
+            .sort({ createdAt: -1 })
+            .skip((page - 1) * limit)
             .limit(limit)
             .exec();
         let total_bet_open = 0;
+        const total = await UserTransation_1.UserTransactionModel.countDocuments(query);
         if (req.query.transaction_status == define_1.TRANSACTION_STATUS_PENDING) {
             total_bet_open = await UserTransation_1.UserTransactionModel.countDocuments({
                 user: (_d = req.user) === null || _d === void 0 ? void 0 : _d._id,
@@ -144,7 +193,8 @@ const betController = {
         }
         return new ApiResponse_1.SuccessResponse("ok", {
             total_bet_open,
-            transations,
+            transations: transactions,
+            total,
         }).send(res);
     }),
 };

@@ -16,11 +16,15 @@ profileRouter.post("/withdrawal", UserController.postWithdrawal);
 
 profileRouter.get("/me", UserController.getProfile);
 
-profileRouter.get("/me", UserController.getProfile);
+profileRouter.get("/dashboard", UserController.getDashboard);
 
 profileRouter.get("/two-fa-key", UserController.getTwoFaKey);
 
 profileRouter.post("/kyc-profile", UserController.postKycProfile);
+
+profileRouter.get("/analysics/ref", UserController.getAnalysisRef);
+
+profileRouter.post("/reset-demo-balance", UserController.resetDemoBalance);
 
 profileRouter.post("/logout", UserController.logOut);
 

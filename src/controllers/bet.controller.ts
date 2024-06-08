@@ -13,6 +13,7 @@ import {
   TRANSACTION_STATUS_FINISH,
   TRANSACTION_STATUS_PENDING,
   TRANSACTION_TYPE_BET,
+  TRANSACTION_TYPE_REF,
 } from "../constants/define";
 import { UserModel } from "../database/model/User";
 import { sendMessage } from "../bot-noti";
@@ -32,6 +33,17 @@ const betController = {
     const bet_id = await getValue("bet_id");
 
     console.log("Đã cược bet_id:", bet_id);
+    const betUser = await UserTransactionModel.findOne({
+      bet_id,
+      user: req.user._id,
+      transaction_type: TRANSACTION_TYPE_BET,
+      transaction_status: TRANSACTION_STATUS_PENDING,
+    });
+
+    if (betUser)
+      return new BadRequestResponse(
+        "Bạn đã cược phiên này rồi. Vui lòng đợi phiên sau"
+      ).send(res);
 
     if (!isBet || !bet_id)
       return new BadRequestResponse("Vui lòng chờ phiên đặt cược bắt đầu").send(
@@ -89,7 +101,21 @@ const betController = {
       value: -bet_value,
       user: req.user?._id,
     });
+    if (req.user?.current_point_type === POINT_TYPE_DEMO) {
+      const bet_count_str: string | null = await getValue("bet_count_demo");
 
+      const bet_count: number =
+        bet_count_str !== null ? parseInt(bet_count_str) : 0;
+
+      const condition_value_str: string | null = await getValue(
+        `condition_${bet_condition}_demo`
+      );
+      const condition_value: number =
+        condition_value_str !== null ? parseInt(condition_value_str) : 0;
+
+      setValue("bet_count_demo", bet_count + 1);
+      setValue(`condition_${bet_condition}_demo`, condition_value + 1);
+    }
     if (req.user?.current_point_type === POINT_TYPE_REAL) {
       await sendMessage(`
        =========${new Date().toLocaleString()}======================
@@ -97,8 +123,26 @@ const betController = {
       ${req.user.email} đã cược ${formatNumber(bet_value)}$ cho ${
         bet_condition === "up" ? "Mua 🟢" : "Bán 🔴"
       }`);
+      const parentUser = await UserModel.findOne({
+        name_code: req.user.ref_code,
+      });
+
+      if (parentUser) {
+        await UserTransactionModel.create({
+          point_type: POINT_TYPE_REAL,
+          transaction_type: TRANSACTION_TYPE_REF,
+          transaction_status: TRANSACTION_STATUS_FINISH,
+          value: (bet_value * 5) / 100,
+          user: parentUser._id,
+        });
+
+        parentUser.real_balance =
+          parentUser.real_balance + bet_value * (5 / 100);
+        await parentUser.save();
+      }
 
       const bet_count_str: string | null = await getValue("bet_count");
+
       const bet_count: number =
         bet_count_str !== null ? parseInt(bet_count_str) : 0;
 
@@ -187,20 +231,45 @@ const betController = {
 
   getTransaction: asyncHandler(async (req: ProtectedRequest, res) => {
     const page = (req.query.page || 1) as any;
-    const limit = (req.query.limit || 20) as any;
-    const transations = await UserTransactionModel.find({
+    const limit = (req.query.limit || 10) as any;
+    const transaction_type = req.query.transaction_type;
+    const transaction_status = req.query.transaction_status;
+    const startDateStr = parseInt(req.query.startDate);
+    const endDateStr = parseInt(req.query.endDate);
+
+    const query = {
       user: req.user?._id,
-      transaction_type: TRANSACTION_TYPE_BET,
-      point_type: req?.user?.current_point_type,
-      transaction_status: req.query?.transaction_status,
-    })
-      .sort({
-        createdAt: -1,
-      })
-      .skip(page - 1)
+      transaction_type,
+      ...(req.query?.transaction_status !== undefined && {
+        transaction_status: req.query.transaction_status,
+      }),
+      ...(req.query?.transaction_status !== null && {
+        transaction_status: { $ne: null },
+      }),
+    } as any;
+
+    // Conditionally add date range to query if startDateStr and endDateStr are defined
+    if (startDateStr && endDateStr) {
+      query.createdAt = {
+        $gte: new Date(startDateStr),
+        $lte: new Date(endDateStr),
+      };
+    }
+
+    if (transaction_status) {
+      query.transaction_status = transaction_status;
+    }
+
+    const transactions = await UserTransactionModel.find(query)
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
       .limit(limit)
       .exec();
+
     let total_bet_open = 0;
+
+    const total = await UserTransactionModel.countDocuments(query);
+
     if (req.query.transaction_status == TRANSACTION_STATUS_PENDING) {
       total_bet_open = await UserTransactionModel.countDocuments({
         user: req.user?._id,
@@ -209,9 +278,11 @@ const betController = {
         transaction_status: req.query?.transaction_status,
       });
     }
+
     return new SuccessResponse("ok", {
       total_bet_open,
-      transations,
+      transations: transactions,
+      total,
     }).send(res);
   }),
 };
