@@ -14,6 +14,7 @@ import {
   TRANSACTION_STATUS_PENDING,
   TRANSACTION_TYPE_BET,
   TRANSACTION_TYPE_REF,
+  Vip_PERCENT,
 } from "../constants/define";
 import { UserModel } from "../database/model/User";
 import { sendMessage } from "../bot-noti";
@@ -135,9 +136,12 @@ const betController = {
           value: (bet_value * 5) / 100,
           user: parentUser._id,
         });
+        const level_vip = parentUser.level_vip || 1;
+        const percent = (await getValue(Vip_PERCENT[level_vip])) || "0.05";
 
-        parentUser.real_balance =
-          parentUser.real_balance + bet_value * (5 / 100);
+        parentUser.ref_balance =
+          (parentUser.ref_balance || 0) + bet_value * parseFloat(percent);
+
         await parentUser.save();
       }
 

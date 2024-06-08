@@ -14,6 +14,8 @@ profileRouter.post("/recharge", UserController.postRecharge);
 
 profileRouter.post("/withdrawal", UserController.postWithdrawal);
 
+profileRouter.post("/withdrawal-refbalance", UserController.withdrawRefBalance);
+
 profileRouter.get("/me", UserController.getProfile);
 
 profileRouter.get("/dashboard", UserController.getDashboard);

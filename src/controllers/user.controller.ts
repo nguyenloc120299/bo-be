@@ -348,6 +348,18 @@ const UserController = {
       totalProfit: totalProfit[0]?.total || 0,
     }).send(res);
   }),
+
+  withdrawRefBalance: asyncHandler(async (req: ProtectedRequest, res) => {
+    const user = req.user;
+    if (user.ref_balance <= 0)
+      return new BadRequestResponse("Số tiền hoa hồng không đủ để rút").send(
+        res
+      );
+    user.real_balance = (user.ref_balance || 0) + (user.real_balance || 0);
+    user.ref_balance = 0;
+    await UserModel.findByIdAndUpdate(user._id, user);
+    return new SuccessResponse("ok", user).send(res);
+  }),
   resetDemoBalance: asyncHandler(async (req: ProtectedRequest, res) => {
     const user = req.user;
     user.demo_balance = 1000;

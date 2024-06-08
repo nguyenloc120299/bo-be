@@ -256,6 +256,7 @@ const AdminControllers = {
       address,
       real_balance,
       amount_balance,
+      level_vip,
       is_lock_transfer,
       is_lock_withdraw,
     } = req.body;
@@ -269,6 +270,7 @@ const AdminControllers = {
     user.number_bank = number_bank || user.number_bank;
     user.account_name = account_name || user.account_name;
     user.address = address || user.address;
+    user.level_vip = level_vip || user.level_vip;
     user.is_lock_transfer =
       typeof is_lock_transfer == "undefined"
         ? user.is_lock_transfer
