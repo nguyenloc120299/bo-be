@@ -117,3 +117,11 @@ export const MERCHANT_KEY = "9ed9988588554658a2afad3b0c47424f";
 export const MERCHANT_ID = "220456";
 
 export const MINUTES_15 = 1000 * 60 * 15;
+
+export const Vip_PERCENT: Record<number, string> = {
+  1: "vip_1",
+  2: "vip_2",
+  3: "vip_3",
+  4: "vip_4",
+  5: "vip_5",
+};

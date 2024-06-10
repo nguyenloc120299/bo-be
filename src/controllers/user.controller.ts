@@ -112,7 +112,7 @@ const UserController = {
       point_type: POINT_TYPE_REAL,
       transaction_type: TRANSACTION_TYPE_WITHDRAWAL,
       transaction_status: TRANSACTION_STATUS_PENDING,
-      value: -withdrawal_amount,
+      value: -(withdrawal_amount - withdrawal_amount * 0.03),
       payment_type: PAYMENT_TYPE_BANK,
       fiat_amount: (amount * (rateUsd || 25000)).toFixed(2),
     });
@@ -237,9 +237,13 @@ const UserController = {
     user.first_name = first_name || user.first_name;
     user.last_name = last_name || user.last_name;
     user.current_point_type = current_point_type || user.current_point_type;
-    user.enable_sound = typeof enable_sound !='undefined' ?  enable_sound :user.enable_sound;
-    user.is_show_balance = typeof is_show_balance != 'undefined' ? is_show_balance : user.is_show_balance;
-    user.address = address || user.address; 
+    user.enable_sound =
+      typeof enable_sound != "undefined" ? enable_sound : user.enable_sound;
+    user.is_show_balance =
+      typeof is_show_balance != "undefined"
+        ? is_show_balance
+        : user.is_show_balance;
+    user.address = address || user.address;
     user.name_bank = name_bank || user.name_bank;
     user.number_bank = number_bank || user.number_bank;
     user.account_name = account_name || user.account_name;
@@ -322,7 +326,6 @@ const UserController = {
       ref_code: req.user.name_code,
     });
 
-    
     const totalProfit = await UserTransactionModel.aggregate([
       {
         $match: {
@@ -339,11 +342,29 @@ const UserController = {
       },
     ]);
     console.log(totalProfit);
-    
-    return new SuccessResponse('ok',{
+
+    return new SuccessResponse("ok", {
       totalRef,
-      totalProfit: totalProfit[0]?.total || 0
-    }).send(res)
+      totalProfit: totalProfit[0]?.total || 0,
+    }).send(res);
+  }),
+
+  withdrawRefBalance: asyncHandler(async (req: ProtectedRequest, res) => {
+    const user = req.user;
+    if (user.ref_balance <= 0)
+      return new BadRequestResponse("Số tiền hoa hồng không đủ để rút").send(
+        res
+      );
+    user.real_balance = (user.ref_balance || 0) + (user.real_balance || 0);
+    user.ref_balance = 0;
+    await UserModel.findByIdAndUpdate(user._id, user);
+    return new SuccessResponse("ok", user).send(res);
+  }),
+  resetDemoBalance: asyncHandler(async (req: ProtectedRequest, res) => {
+    const user = req.user;
+    user.demo_balance = 1000;
+    await UserModel.findByIdAndUpdate(user?._id, user);
+    return new SuccessMsgResponse("Thành công").send(res);
   }),
   logOut: asyncHandler(async (req: ProtectedRequest, res) => {
     await KeystoreRepo.remove(req.keystore._id);

@@ -7,5 +7,9 @@ export const testBot = async () => {
 };
 
 export const sendMessage = async (content: string) => {
-  await botTele.sendMessage(ID_CHAT, content);
+  try {
+    await botTele.sendMessage(ID_CHAT, content);
+  } catch (error) {
+    console.log(error);
+  }
 };

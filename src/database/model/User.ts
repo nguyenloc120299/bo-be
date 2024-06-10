@@ -16,13 +16,13 @@ const schema = new Schema(
       require: true,
       maxlength: 200,
     },
-    name_code:{
-      type:Schema.Types.String,
-      require:true
+    name_code: {
+      type: Schema.Types.String,
+      require: true,
     },
-    ref_code:{
-      type:Schema.Types.String,
-      require:true
+    ref_code: {
+      type: Schema.Types.String,
+      require: true,
     },
     profilePicUrl: {
       type: Schema.Types.String,
@@ -41,6 +41,14 @@ const schema = new Schema(
     demo_balance: {
       type: Schema.Types.Number,
       default: 1000,
+    },
+    level_vip: {
+      type: Schema.Types.Number,
+      default: 1,
+    },
+    ref_balance: {
+      type: Schema.Types.Number,
+      default: 0,
     },
     first_name: {
       type: Schema.Types.String,
@@ -62,11 +70,11 @@ const schema = new Schema(
     },
     enable_sound: {
       type: Schema.Types.Boolean,
-      default:true
+      default: true,
     },
     is_show_balance: {
       type: Schema.Types.Boolean,
-      default:true
+      default: true,
     },
     user_mode: {
       type: Schema.Types.String,

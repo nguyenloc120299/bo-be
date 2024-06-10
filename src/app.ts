@@ -16,7 +16,7 @@ import { getTradeRate } from "./helpers/bet";
 import { getSocketInstance, initializeSocket } from "./socket/socketInstance";
 import TelegramBot from "node-telegram-bot-api";
 import { tokenInfo } from "./config";
-
+import { initVip } from "./utils/initVip";
 
 export const botTele = new TelegramBot(tokenInfo.apiTokenBotTele, {
   polling: true,
@@ -46,5 +46,7 @@ getTradeRate().then((price) => {
 });
 
 initCron();
+
+initVip();
 
 export default httpServer;

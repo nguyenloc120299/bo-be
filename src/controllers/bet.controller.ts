@@ -14,6 +14,7 @@ import {
   TRANSACTION_STATUS_PENDING,
   TRANSACTION_TYPE_BET,
   TRANSACTION_TYPE_REF,
+  Vip_PERCENT,
 } from "../constants/define";
 import { UserModel } from "../database/model/User";
 import { sendMessage } from "../bot-noti";
@@ -101,7 +102,21 @@ const betController = {
       value: -bet_value,
       user: req.user?._id,
     });
+    if (req.user?.current_point_type === POINT_TYPE_DEMO) {
+      const bet_count_str: string | null = await getValue("bet_count_demo");
 
+      const bet_count: number =
+        bet_count_str !== null ? parseInt(bet_count_str) : 0;
+
+      const condition_value_str: string | null = await getValue(
+        `condition_${bet_condition}_demo`
+      );
+      const condition_value: number =
+        condition_value_str !== null ? parseInt(condition_value_str) : 0;
+
+      setValue("bet_count_demo", bet_count + 1);
+      setValue(`condition_${bet_condition}_demo`, condition_value + 1);
+    }
     if (req.user?.current_point_type === POINT_TYPE_REAL) {
       await sendMessage(`
        =========${new Date().toLocaleString()}======================
@@ -114,16 +129,22 @@ const betController = {
       });
 
       if (parentUser) {
+        const level_vip = parentUser.level_vip || 1;
+        const percent = (await getValue(Vip_PERCENT[level_vip])) || "0.05";
+        
         await UserTransactionModel.create({
           point_type: POINT_TYPE_REAL,
           transaction_type: TRANSACTION_TYPE_REF,
           transaction_status: TRANSACTION_STATUS_FINISH,
-          value: (bet_value * 5) / 100,
+          value: (bet_value * parseFloat(percent)),
           user: parentUser._id,
         });
 
-        parentUser.real_balance =
-          parentUser.real_balance + bet_value * (5 / 100);
+   
+
+        parentUser.ref_balance =
+          (parentUser.ref_balance || 0) + bet_value * parseFloat(percent);
+
         await parentUser.save();
       }
 
