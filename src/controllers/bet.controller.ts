@@ -243,7 +243,7 @@ const betController = {
     }
 
     if (transaction_status) {
-      query.transaction_status = transaction_status
+      query.transaction_status = transaction_status;
     }
 
     const transactions = await UserTransactionModel.find(query)
@@ -256,14 +256,12 @@ const betController = {
 
     const total = await UserTransactionModel.countDocuments(query);
 
-    if (req.query.transaction_status == TRANSACTION_STATUS_PENDING) {
-      total_bet_open = await UserTransactionModel.countDocuments({
-        user: req.user?._id,
-        transaction_type: TRANSACTION_TYPE_BET,
-        point_type: req?.user?.current_point_type,
-        transaction_status: req.query?.transaction_status,
-      });
-    }
+    total_bet_open = await UserTransactionModel.countDocuments({
+      user: req.user?._id,
+      transaction_type: TRANSACTION_TYPE_BET,
+      point_type: req?.user?.current_point_type,
+      transaction_status: TRANSACTION_STATUS_PENDING,
+    });
 
     return new SuccessResponse("ok", {
       total_bet_open,
@@ -274,3 +272,4 @@ const betController = {
 };
 
 export { betController };
+   

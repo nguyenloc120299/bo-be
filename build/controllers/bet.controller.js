@@ -141,7 +141,7 @@ const betController = {
         }
     },
     getTransaction: (0, asyncHandler_1.default)(async (req, res) => {
-        var _a, _b, _c, _d, _e, _f;
+        var _a, _b, _c, _d, _e;
         const page = (req.query.page || 1);
         const limit = (req.query.limit || 10);
         const transaction_type = req.query.transaction_type;
@@ -175,14 +175,12 @@ const betController = {
             .exec();
         let total_bet_open = 0;
         const total = await UserTransation_1.UserTransactionModel.countDocuments(query);
-        if (req.query.transaction_status == define_1.TRANSACTION_STATUS_PENDING) {
-            total_bet_open = await UserTransation_1.UserTransactionModel.countDocuments({
-                user: (_d = req.user) === null || _d === void 0 ? void 0 : _d._id,
-                transaction_type: define_1.TRANSACTION_TYPE_BET,
-                point_type: (_e = req === null || req === void 0 ? void 0 : req.user) === null || _e === void 0 ? void 0 : _e.current_point_type,
-                transaction_status: (_f = req.query) === null || _f === void 0 ? void 0 : _f.transaction_status,
-            });
-        }
+        total_bet_open = await UserTransation_1.UserTransactionModel.countDocuments({
+            user: (_d = req.user) === null || _d === void 0 ? void 0 : _d._id,
+            transaction_type: define_1.TRANSACTION_TYPE_BET,
+            point_type: (_e = req === null || req === void 0 ? void 0 : req.user) === null || _e === void 0 ? void 0 : _e.current_point_type,
+            transaction_status: define_1.TRANSACTION_STATUS_PENDING,
+        });
         return new ApiResponse_1.SuccessResponse("ok", {
             total_bet_open,
             transations: transactions,
