@@ -102,6 +102,35 @@ const UserController = {
       return new BadRequestResponse(
         "Số tiền yêu cầu rút lớn hơn số dư tài khoản Thực"
       ).send(res);
+
+    if (
+      (!req.user.level_vip || req.user.level_vip == 1) &&
+      withdrawal_amount > 5000
+    )
+      return new BadRequestResponse(
+        "Số tiền rút tối đa của vip 1 là 5000$"
+      ).send(res);
+
+    if (req.user.level_vip == 2 && withdrawal_amount > 10000)
+      return new BadRequestResponse(
+        "Số tiền rút tối đa của vip 1 là 10.000$"
+      ).send(res);
+
+    if (req.user.level_vip == 3 && withdrawal_amount > 15000)
+      return new BadRequestResponse(
+        "Số tiền rút tối đa của vip 1 là 15.000$"
+      ).send(res);
+
+    if (req.user.level_vip == 4 && withdrawal_amount > 50000)
+      return new BadRequestResponse(
+        "Số tiền rút tối đa của vip 1 là 50.000$"
+      ).send(res);
+
+    if (req.user.level_vip == 1 && withdrawal_amount > 5000)
+      return new BadRequestResponse(
+        "Số tiền rút tối đa của vip 1 là 5000$"
+      ).send(res);
+
     if (withdrawal_amount < minimum_withdrawal)
       return new BadRequestResponse(
         `Số tiền rút phải lớn hơn ${minimum_withdrawal}`
