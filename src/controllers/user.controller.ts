@@ -35,7 +35,7 @@ import mongoose from "mongoose";
 const UserController = {
   callBackRecharge: asyncHandler(async (req: ProtectedRequest, res) => {
     const { outTradeNo } = req.body;
-    console.log("callBackRecharge", outTradeNo);
+    console.log("---------------callBackRecharge---------------", outTradeNo);
     // const socket = getSocketInstance();
     //const usersSocket = await getValue("users_socket");
 
@@ -184,7 +184,7 @@ const UserController = {
     const requestData = {
       amount: `${amount * (rateUsd || 25000)}`,
       callBackUrl:
-        "https://api-bo.tylekeo-go2q.site/api/auth/callback-recharge",
+        "https://api.cryptoplus.press/api/auth/callback-recharge",
       memberId: MERCHANT_ID,
       orderNumber: rechargeTrans._id.toString(),
       payType: payment_method,

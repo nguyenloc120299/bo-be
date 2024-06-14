@@ -44,6 +44,8 @@ router.post(
   asyncHandler(async (req: RoleRequest, res) => {
     try {
       const { file } = req as any;
+      
+      console.log("🚀 ~ asyncHandler ~ file:", file)
 
       const { path } = file;
 
