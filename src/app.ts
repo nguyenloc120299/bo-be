@@ -27,7 +27,7 @@ const app = express();
 app.use(express.json());
 
 app.use(
-  express.urlencoded({ limit: "10mb", extended: true, parameterLimit: 50000 })
+  express.urlencoded({ limit: "20mb", extended: true, parameterLimit: 50000 })
 );
 
 app.use(cors({ origin: "*", optionsSuccessStatus: 200 }));
