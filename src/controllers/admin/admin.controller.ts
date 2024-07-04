@@ -451,6 +451,37 @@ const AdminControllers = {
     ).send(res);
   }),
 
+  handleRecharge: asyncHandler(async (req: ProtectedRequest, res) => {
+    const { transId, isResolve, note } = req.body;
+    const transaction = await UserTransactionModel.findOne({
+      _id: transId,
+      transaction_status: TRANSACTION_STATUS_PENDING,
+      transaction_type: TRANSACTION_TYPE_RECHARGE,
+    });
+
+    if (!transaction)
+      return new BadRequestResponse("Không tìm thấy giao dịch này").send(res);
+
+    const user = await UserModel.findById(transaction.user);
+
+    if (!user) return new BadRequestResponse("Không tìm thấy user").send(res);
+
+    if (isResolve) {
+      transaction.transaction_status = TRANSACTION_STATUS_FINISH;
+      user.real_balance = (user?.real_balance || 0) + transaction.value;
+    } else {
+      transaction.transaction_status = TRANSACTION_STATUS_CANCEL;
+
+      transaction.note = note;
+    }
+
+    await user.save();
+    await transaction.save();
+    return new SuccessMsgResponse(
+      `${isResolve ? "Đã duyệt" : "Đã hủy"} rút tiền`
+    ).send(res);
+  }),
+
   historyBet: asyncHandler(async (req: ProtectedRequest, res) => {
     let page = 1;
     if (req.query.page && !isNaN(parseInt(req.query.page))) {

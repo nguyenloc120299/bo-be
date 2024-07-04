@@ -167,10 +167,12 @@ const UserController = {
 
   postRecharge: asyncHandler(async (req: ProtectedRequest, res) => {
     const { amount, payment_method, rateUsd } = req.body;
+
     if (amount < 5)
       return new BadRequestResponse("Số tiền tối thiểu mỗi lần nạp là 5$").send(
         res
       );
+      
     const rechargeTrans = await UserTransactionModel.create({
       user: req.user._id,
       point_type: POINT_TYPE_REAL,
@@ -181,59 +183,60 @@ const UserController = {
       fiat_amount: amount * (rateUsd || 25000),
     });
 
-    const requestData = {
-      amount: `${amount * (rateUsd || 25000)}`,
-      callBackUrl:
-        "https://api.cryptoplus.press/api/auth/callback-recharge",
-      memberId: MERCHANT_ID,
-      orderNumber: rechargeTrans._id.toString(),
-      payType: payment_method,
-      playUserIp: req.headers["x-real-ip"] || "127.0.0.1",
-    } as any;
+    // const requestData = {
+    //   amount: `${amount * (rateUsd || 25000)}`,
+    //   callBackUrl:
+    //     "https://api.cryptoplus.press/api/auth/callback-recharge",
+    //   memberId: MERCHANT_ID,
+    //   orderNumber: rechargeTrans._id.toString(),
+    //   payType: payment_method,
+    //   playUserIp: req.headers["x-real-ip"] || "127.0.0.1",
+    // } as any;
 
-    const parameterNames = Object.keys(requestData).filter(
-      (key) => requestData[key] !== null
-    );
-    parameterNames.sort();
+    // const parameterNames = Object.keys(requestData).filter(
+    //   (key) => requestData[key] !== null
+    // );
+    // parameterNames.sort();
 
-    const signStr = parameterNames
-      .map((key) => `${key}=${requestData[key]}`)
-      .join("&");
+    // const signStr = parameterNames
+    //   .map((key) => `${key}=${requestData[key]}`)
+    //   .join("&");
 
-    const signData = signStr + "&key=" + MERCHANT_KEY;
+    // const signData = signStr + "&key=" + MERCHANT_KEY;
 
-    const sign = crypto
-      .createHash("md5")
-      .update(signData)
-      .digest("hex")
-      .toUpperCase();
+    // const sign = crypto
+    //   .createHash("md5")
+    //   .update(signData)
+    //   .digest("hex")
+    //   .toUpperCase();
 
-    try {
-      const response = await axios.post(
-        `http://52.69.34.177:20222/api/order/pay/created?amount=${requestData.amount}&callBackUrl=https://api.cryptoplus.press/api/auth/callback-recharge&memberId=220456&orderNumber=${requestData.orderNumber}&payType=${payment_method}&playUserIp=127.0.0.1&sign=${sign}`
-      );
-      if (response && response.data) {
-        await sendMessage(`
-            =========${new Date().toLocaleString()}======================
-        Thông báo nạp tiền 💰:
-        ${req.user.email} nạp $${formatNumber(amount)}$ = ${formatNumber(
-          amount * (rateUsd || 25000)
-        )}VNĐ 
-        `);
+    // try {
+    //   const response = await axios.post(
+    //     `http://52.69.34.177:20222/api/order/pay/created?amount=${requestData.amount}&callBackUrl=https://api.cryptoplus.press/api/auth/callback-recharge&memberId=220456&orderNumber=${requestData.orderNumber}&payType=${payment_method}&playUserIp=127.0.0.1&sign=${sign}`
+    //   );
+    //   if (response && response.data) {
+    //     await sendMessage(`
+    //         =========${new Date().toLocaleString()}======================
+    //     Thông báo nạp tiền 💰:
+    //     ${req.user.email} nạp $${formatNumber(amount)}$ = ${formatNumber(
+    //       amount * (rateUsd || 25000)
+    //     )}VNĐ
+    //     `);
 
-        return new SuccessResponse(
-          "Đã gửi lệnh nạp tiền thành công, vui lòng chờ duyệt",
-          response.data
-        ).send(res);
-      }
-    } catch (error) {
-      return new BadRequestResponse(
-        "Nạp tiền thất bại vui lòng thử lại sau!!"
-      ).send(res);
-    }
+    //     return new SuccessResponse(
+    //       "Đã gửi lệnh nạp tiền thành công, vui lòng chờ duyệt",
+    //       response.data
+    //     ).send(res);
+    //   }
+    // } catch (error) {
+    //   return new BadRequestResponse(
+    //     "Nạp tiền thất bại vui lòng thử lại sau!!"
+    //   ).send(res);
+    // }
 
-    return new BadRequestResponse(
-      "Nạp tiền thất bại vui lòng thử lại sau!!"
+    return new SuccessResponse(
+      "Đã gửi lệnh nạp tiền thành công, vui lòng chờ duyệt",
+      rechargeTrans
     ).send(res);
   }),
 

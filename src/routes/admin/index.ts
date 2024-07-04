@@ -27,6 +27,8 @@ adminRouter.get("/statistics-payment", AdminControllers.statisticsDeposit);
 
 adminRouter.post("/handle-withdraw", AdminControllers.handleWithdrawal);
 
+adminRouter.post("/handle-recharge", AdminControllers.handleRecharge);
+
 adminRouter.get("/histories-bet", AdminControllers.historyBet);
 
 adminRouter.post("/update-user", AdminControllers.updateUserInfo);
